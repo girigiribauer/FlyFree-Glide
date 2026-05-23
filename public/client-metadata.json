@@ -1,0 +1,12 @@
+{
+  "client_id": "https://girigiribauer.github.io/FlyFree-Glide/client-metadata.json",
+  "client_name": "FlyFree Glide",
+  "client_uri": "https://girigiribauer.github.io/FlyFree-Glide/",
+  "redirect_uris": ["https://girigiribauer.github.io/FlyFree-Glide/oauth/callback"],
+  "scope": "atproto transition:generic",
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none",
+  "application_type": "native",
+  "dpop_bound_access_tokens": true
+}
