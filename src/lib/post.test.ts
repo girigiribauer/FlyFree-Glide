@@ -1,0 +1,147 @@
+import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { postToBluesky } from './post'
+import type { OptimizedImage } from './image'
+
+vi.mock('./ogp', () => ({
+  extractFirstUrl: vi.fn((text: string) => {
+    const match = text.match(/https?:\/\/[^\s]+/)
+    return match ? match[0] : null
+  }),
+  fetchLinkCard: vi.fn().mockResolvedValue(null),
+}))
+
+import { fetchLinkCard } from './ogp'
+
+const TEST_URI = 'at://did:plc:test/app.bsky.feed.post/testkey'
+const TEST_URL = 'https://bsky.app/profile/did:plc:test/post/testkey'
+
+function mockAgent(postImpl = vi.fn().mockResolvedValue({ uri: TEST_URI })) {
+  return {
+    post: postImpl,
+    uploadBlob: vi.fn().mockResolvedValue({
+      success: true,
+      data: {
+        blob: {
+          ref: { toString: () => 'bafytest' },
+          mimeType: 'image/jpeg',
+          size: 100,
+        },
+      },
+    }),
+    com: {
+      atproto: {
+        identity: {
+          resolveHandle: vi.fn().mockResolvedValue({ data: { did: 'did:plc:test' } }),
+        },
+      },
+    },
+  }
+}
+
+function makeImage(overrides?: Partial<OptimizedImage>): OptimizedImage {
+  return {
+    data: new Uint8Array([1, 2, 3]),
+    mimeType: 'image/jpeg',
+    width: 800,
+    height: 600,
+    ...overrides,
+  }
+}
+
+describe('postToBluesky', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  test('投稿後に bsky.app の URL を返す', async () => {
+    const agent = mockAgent()
+    const url = await postToBluesky(agent, 'hello')
+    expect(url).toBe(TEST_URL)
+  })
+
+  test('via: FlyFree Glide が付与される', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'hello')
+    expect(agent.post).toHaveBeenCalledWith(expect.objectContaining({ via: 'FlyFree Glide' }))
+  })
+
+  test('テキストが trim される', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, '  hello  ')
+    expect(agent.post).toHaveBeenCalledWith(expect.objectContaining({ text: 'hello' }))
+  })
+
+  test('URL が facet として付与される', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'https://example.com を見てください')
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    const linkFacet = record.facets?.find((f: { features: { $type: string }[] }) =>
+      f.features.some((feat) => feat.$type === 'app.bsky.richtext.facet#link'),
+    )
+    expect(linkFacet).toBeDefined()
+  })
+
+  test('URL を含むテキストでリンクカード embed が付与される', async () => {
+    vi.mocked(fetchLinkCard).mockResolvedValueOnce({
+      url: 'https://example.com',
+      title: 'Test Title',
+      description: 'Test Description',
+      thumbUrl: null,
+    })
+    const agent = mockAgent()
+    await postToBluesky(agent, 'https://example.com を見てください')
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.embed).toMatchObject({
+      $type: 'app.bsky.embed.external',
+      external: expect.objectContaining({
+        uri: 'https://example.com',
+        title: 'Test Title',
+      }),
+    })
+  })
+
+  test('OGP 取得失敗時は embed なしで投稿される', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'https://example.com を見てください')
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.embed).toBeUndefined()
+  })
+
+  test('画像があるときは images embed が付与される', async () => {
+    const agent = mockAgent()
+    const images = [makeImage({ width: 1280, height: 720 })]
+    await postToBluesky(agent, 'テスト投稿', images)
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.embed).toMatchObject({
+      $type: 'app.bsky.embed.images',
+      images: [expect.objectContaining({ aspectRatio: { width: 1280, height: 720 } })],
+    })
+  })
+
+  test('画像があるときはリンクカード embed は付与されない', async () => {
+    vi.mocked(fetchLinkCard).mockResolvedValueOnce({
+      url: 'https://example.com',
+      title: 'Test',
+      description: '',
+      thumbUrl: null,
+    })
+    const agent = mockAgent()
+    const images = [makeImage()]
+    await postToBluesky(agent, 'https://example.com', images)
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.embed?.$type).toBe('app.bsky.embed.images')
+    expect(fetchLinkCard).not.toHaveBeenCalled()
+  })
+
+  test('複数画像をアップロードする', async () => {
+    const agent = mockAgent()
+    const images = [makeImage(), makeImage(), makeImage()]
+    await postToBluesky(agent, 'テスト', images)
+    expect(agent.uploadBlob).toHaveBeenCalledTimes(3)
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.embed.images).toHaveLength(3)
+  })
+
+  test('agent.post が失敗したらエラーが伝播する', async () => {
+    const agent = mockAgent(vi.fn().mockRejectedValue(new Error('network error')))
+    await expect(postToBluesky(agent, 'hello')).rejects.toThrow('network error')
+  })
+})
