@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { calcResizeDimensions, findOptimalQuality } from './image'
+
 import { MAX_IMAGE_DIMENSION } from './constants'
+import { calcResizeDimensions, findOptimalQuality } from './image'
 
 describe('calcResizeDimensions', () => {
   test('上限以内の場合はそのまま返す', () => {

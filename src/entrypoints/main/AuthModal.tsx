@@ -1,5 +1,6 @@
-import { createSignal, onCleanup, Show } from 'solid-js'
 import type { OAuthSession } from '@atproto/oauth-client-browser'
+import { createSignal, onCleanup, Show } from 'solid-js'
+
 import { getOAuthClient } from '../../lib/client'
 import { checkOAuthCallback } from '../../lib/session'
 
@@ -11,6 +12,7 @@ interface Props {
 
 export default function AuthModal(props: Props) {
   const [handle, setHandle] = createSignal('')
+  const [pds, setPds] = createSignal('bsky.social')
   const [authorizing, setAuthorizing] = createSignal(false)
   const [error, setError] = createSignal('')
   let intervalId: ReturnType<typeof setInterval> | undefined
@@ -22,14 +24,16 @@ export default function AuthModal(props: Props) {
   })
 
   async function login() {
-    if (!handle().trim()) return
+    if (!handle().trim() || !pds().trim()) return
     setError('')
     try {
-      const win = await chrome.windows.getCurrent()
+      const win = await browser.windows.getCurrent()
       const popupWindowId = win.id
-      const client = getOAuthClient()
+      const host = pds().trim()
+      const resolverUrl = host.includes('://') ? host : `https://${host}`
+      const client = getOAuthClient(resolverUrl)
       const authUrl = await client.authorize(handle().trim())
-      chrome.windows.create({ url: authUrl.toString(), type: 'normal', width: 500, height: 700 })
+      browser.windows.create({ url: authUrl.toString(), type: 'normal', width: 500, height: 700 })
       startPolling(popupWindowId)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err))
@@ -51,7 +55,7 @@ export default function AuthModal(props: Props) {
         const session = await checkOAuthCallback()
         if (session) {
           stopPolling()
-          if (popupWindowId != null) chrome.windows.update(popupWindowId, { focused: true })
+          if (popupWindowId != null) browser.windows.update(popupWindowId, { focused: true })
           props.onSuccess(session)
         }
       } catch (err) {
@@ -78,7 +82,17 @@ export default function AuthModal(props: Props) {
         onInput={e => setHandle(e.currentTarget.value)}
         onKeyDown={e => e.key === 'Enter' && login()}
       />
-      <button onClick={login} disabled={!handle().trim() || authorizing()}>
+      <details>
+        <summary>PDS を変更する</summary>
+        <input
+          type="text"
+          placeholder="bsky.social"
+          value={pds()}
+          onInput={e => setPds(e.currentTarget.value)}
+          onKeyDown={e => e.key === 'Enter' && login()}
+        />
+      </details>
+      <button onClick={login} disabled={!handle().trim() || !pds().trim() || authorizing()}>
         {authorizing() ? '認証中...' : 'Login with Bluesky'}
       </button>
       <Show when={authorizing()}>

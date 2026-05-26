@@ -1,4 +1,4 @@
-import { createSignal, onMount, onCleanup } from 'solid-js'
+import { createSignal, onCleanup,onMount } from 'solid-js'
 
 const AUTO_CLOSE_SEC = 5
 

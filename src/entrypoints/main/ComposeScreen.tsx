@@ -1,11 +1,13 @@
-import { batch, createSignal, For, onMount, onCleanup, Show } from 'solid-js'
 import { Agent } from '@atproto/api'
 import type { OAuthSession } from '@atproto/oauth-client-browser'
+import { batch, createSignal, For, onCleanup, onMount, Show } from 'solid-js'
+
 import { getOAuthClient } from '../../lib/client'
-import { postToBluesky } from '../../lib/post'
-import { canPost, remainingGraphemes, isOverLimit } from '../../lib/composer'
-import { optimizeImage } from '../../lib/image'
+import { canPost, isOverLimit,remainingGraphemes } from '../../lib/composer'
 import { MAX_IMAGE_SIZE, MAX_POST_IMAGES } from '../../lib/constants'
+import { optimizeImage } from '../../lib/image'
+import { postToBluesky } from '../../lib/post'
+import { openXCompose,uint8ToBase64, type XPending } from '../../lib/xpost'
 
 interface Props {
   session: OAuthSession
@@ -14,10 +16,14 @@ interface Props {
   onLogout: () => void
 }
 
+interface ImageEntry {
+  file: File
+  previewUrl: string
+}
+
 export default function ComposeScreen(props: Props) {
   const [text, setText] = createSignal(props.initialText)
-  const [images, setImages] = createSignal<File[]>([])
-  const [previews, setPreviews] = createSignal<string[]>([])
+  const [imageEntries, setImageEntries] = createSignal<ImageEntry[]>([])
   const [dragging, setDragging] = createSignal(false)
   const [posting, setPosting] = createSignal(false)
   const [error, setError] = createSignal('')
@@ -34,17 +40,17 @@ export default function ComposeScreen(props: Props) {
   })
 
   onCleanup(() => {
-    previews().forEach(url => URL.revokeObjectURL(url))
+    imageEntries().forEach(e => URL.revokeObjectURL(e.previewUrl))
   })
 
   function addFiles(files: File[]) {
     const imageFiles = files.filter(f => f.type.startsWith('image/'))
     if (imageFiles.length === 0) return
-    batch(() => {
-      const next = [...images(), ...imageFiles].slice(0, MAX_POST_IMAGES)
-      const added = next.slice(images().length)
-      setImages(next)
-      setPreviews([...previews(), ...added.map(f => URL.createObjectURL(f))].slice(0, MAX_POST_IMAGES))
+    setImageEntries(prev => {
+      const newEntries = imageFiles
+        .slice(0, MAX_POST_IMAGES - prev.length)
+        .map(f => ({ file: f, previewUrl: URL.createObjectURL(f) }))
+      return [...prev, ...newEntries]
     })
   }
 
@@ -55,11 +61,8 @@ export default function ComposeScreen(props: Props) {
   }
 
   function removeImage(index: number) {
-    URL.revokeObjectURL(previews()[index])
-    batch(() => {
-      setImages(prev => prev.filter((_, i) => i !== index))
-      setPreviews(prev => prev.filter((_, i) => i !== index))
-    })
+    URL.revokeObjectURL(imageEntries()[index].previewUrl)
+    setImageEntries(prev => prev.filter((_, i) => i !== index))
   }
 
   function handleDragEnter(e: DragEvent) {
@@ -87,18 +90,27 @@ export default function ComposeScreen(props: Props) {
   }
 
   async function post() {
-    if (!canPost(text(), images().length)) return
+    if (!canPost(text(), imageEntries().length)) return
     setPosting(true)
     setError('')
     try {
       const agent = new Agent(props.session)
-      const optimizedImages = await Promise.all(images().map(f => optimizeImage(f, MAX_IMAGE_SIZE)))
+      const entries = imageEntries()
+      const optimizedImages = await Promise.all(entries.map(({ file }) => optimizeImage(file, MAX_IMAGE_SIZE)))
       const url = await postToBluesky(agent, text(), optimizedImages)
-      previews().forEach(u => URL.revokeObjectURL(u))
+      const xPending: XPending = {
+        text: text().trim(),
+        images: optimizedImages.map((img, i) => ({
+          data: uint8ToBase64(img.data),
+          mimeType: img.mimeType,
+          name: entries[i].file.name,
+        })),
+      }
+      await browser.storage.session.set({ xPending })
+      entries.forEach(e => URL.revokeObjectURL(e.previewUrl))
       batch(() => {
         setText('')
-        setImages([])
-        setPreviews([])
+        setImageEntries([])
       })
       props.onPost(url)
     } catch (err: unknown) {
@@ -122,6 +134,17 @@ export default function ComposeScreen(props: Props) {
       const len = (e.currentTarget as HTMLTextAreaElement).value.length
       ;(e.currentTarget as HTMLTextAreaElement).setSelectionRange(len, len)
     }
+  }
+
+  async function testXInjection() {
+    const entries = imageEntries()
+    const optimized = await Promise.all(entries.map(({ file }) => optimizeImage(file, MAX_IMAGE_SIZE)))
+    const xPending: XPending = {
+      text: text().trim(),
+      images: optimized.map((img, i) => ({ data: uint8ToBase64(img.data), mimeType: img.mimeType, name: entries[i].file.name })),
+    }
+    await browser.storage.session.set({ xPending })
+    openXCompose()
   }
 
   async function logout() {
@@ -157,7 +180,7 @@ export default function ComposeScreen(props: Props) {
         <span style={{ color: isOverLimit(text()) ? 'red' : undefined }}>
           {remainingGraphemes(text())}
         </span>
-        <button onClick={post} disabled={posting() || !canPost(text(), images().length)}>
+        <button onClick={post} disabled={posting() || !canPost(text(), imageEntries().length)}>
           {posting() ? 'Posting...' : 'Post to Bluesky'}
         </button>
       </div>
@@ -170,18 +193,18 @@ export default function ComposeScreen(props: Props) {
         style={{ display: 'none' }}
         onChange={handleImageSelect}
       />
-      <button onClick={() => fileInputRef?.click()} disabled={posting() || images().length >= MAX_POST_IMAGES}>
-        画像を追加 ({images().length}/{MAX_POST_IMAGES})
+      <button onClick={() => fileInputRef?.click()} disabled={posting() || imageEntries().length >= MAX_POST_IMAGES}>
+        画像を追加 ({imageEntries().length}/{MAX_POST_IMAGES})
       </button>
 
-      <Show when={images().length > 0}>
+      <Show when={imageEntries().length > 0}>
         <div style={{ display: 'flex', gap: '8px', 'flex-wrap': 'wrap', 'margin-top': '8px' }}>
-          <For each={previews()}>
-            {(src, i) => (
+          <For each={imageEntries()}>
+            {(entry, i) => (
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <img
-                  src={src}
-                  alt={images()[i()]?.name}
+                  src={entry.previewUrl}
+                  alt={entry.file.name}
                   style={{ width: '80px', height: '80px', 'object-fit': 'cover', 'border-radius': '4px', display: 'block' }}
                 />
                 <button
@@ -215,6 +238,7 @@ export default function ComposeScreen(props: Props) {
         <p style={{ color: 'red' }}>{error()}</p>
       </Show>
 
+      <button onClick={testXInjection} disabled={!text().trim()}>X テスト (Dev)</button>
       <button onClick={logout}>Logout</button>
     </div>
   )

@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+
 import { extractCallbackParams } from './oauth'
 
 const BASE = 'https://girigiribauer.github.io/FlyFree-Glide/oauth/callback'

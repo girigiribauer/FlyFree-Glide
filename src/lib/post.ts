@@ -1,6 +1,7 @@
 import { RichText } from '@atproto/api'
-import { type OptimizedImage, optimizeImage } from './image'
+
 import { MAX_LINK_THUMB_SIZE } from './constants'
+import { type OptimizedImage, optimizeImage } from './image'
 import { extractFirstUrl, fetchLinkCard } from './ogp'
 
 export type { OptimizedImage as PostImage }
@@ -21,6 +22,11 @@ export interface AgentLike {
       }
     }
   }
+}
+
+function removeLinkCardUrl(text: string, url: string): string {
+  const escaped = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return text.replace(new RegExp(`\\s*${escaped}\\s*`), ' ').trim()
 }
 
 function atUriToBskyUrl(uri: string): string {
@@ -91,15 +97,24 @@ export async function postToBluesky(
   text: string,
   images: OptimizedImage[] = [],
 ): Promise<string> {
-  const rt = new RichText({ text: text.trim() })
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await rt.detectFacets(agent as any)
+  const trimmed = text.trim()
 
   // 画像とリンクカードは排他
+  const linkUrl = images.length === 0 ? extractFirstUrl(trimmed) : undefined
   const embed =
     images.length > 0
       ? await buildImageEmbed(agent, images)
-      : await buildLinkCardEmbed(agent, text.trim())
+      : await buildLinkCardEmbed(agent, trimmed)
+
+  // リンクカード生成時はテキストから URL を除去（Bluesky 公式クライアントと同様の挙動）
+  const finalText =
+    embed?.$type === 'app.bsky.embed.external' && linkUrl
+      ? removeLinkCardUrl(trimmed, linkUrl)
+      : trimmed
+
+  const rt = new RichText({ text: finalText })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await rt.detectFacets(agent as any)
 
   const result = await agent.post({
     text: rt.text,

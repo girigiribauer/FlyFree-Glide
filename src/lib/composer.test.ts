@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+
 import { canPost, countGraphemes, isOverLimit, MAX_GRAPHEMES, remainingGraphemes } from './composer'
 
 describe('countGraphemes', () => {

@@ -1,5 +1,6 @@
-import { render, screen, fireEvent } from '@solidjs/testing-library'
+import { fireEvent,render, screen } from '@solidjs/testing-library'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+
 import CompleteModal from './CompleteModal'
 
 describe('CompleteModal', () => {

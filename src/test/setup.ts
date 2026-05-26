@@ -1,13 +1,14 @@
 import '@testing-library/jest-dom/vitest'
-import { vi, afterEach } from 'vitest'
+
 import { cleanup } from '@solidjs/testing-library'
+import { afterEach,vi } from 'vitest'
 
 afterEach(cleanup)
 
 vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock')
 vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined)
 
-vi.stubGlobal('chrome', {
+vi.stubGlobal('browser', {
   storage: {
     session: {
       get: vi.fn().mockResolvedValue({}),

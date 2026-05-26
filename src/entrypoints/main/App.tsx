@@ -1,10 +1,12 @@
-import { createSignal, onMount, Show } from 'solid-js'
 import type { OAuthSession } from '@atproto/oauth-client-browser'
-import ComposeScreen from './ComposeScreen'
+import { createSignal, onMount, Show } from 'solid-js'
+
+import { composeInitialText } from '../../lib/initialText'
+import { checkOAuthCallback, restoreSession } from '../../lib/session'
+import { openXCompose } from '../../lib/xpost'
 import AuthModal from './AuthModal'
 import CompleteModal from './CompleteModal'
-import { checkOAuthCallback, restoreSession } from '../../lib/session'
-import { composeInitialText } from '../../lib/initialText'
+import ComposeScreen from './ComposeScreen'
 
 type ModalState =
   | { kind: 'none' }
@@ -18,11 +20,11 @@ export default function App() {
   const [initialText, setInitialText] = createSignal('')
 
   onMount(async () => {
-    const stored = await chrome.storage.session.get('pendingPage')
+    const stored = await browser.storage.session.get('pendingPage')
     const page = stored.pendingPage as { url?: string; title?: string } | undefined
     if (page) {
       setInitialText(composeInitialText(page))
-      await chrome.storage.session.remove('pendingPage')
+      await browser.storage.session.remove('pendingPage')
     }
 
     try {
@@ -59,7 +61,10 @@ export default function App() {
           <ComposeScreen
             session={s()}
             initialText={initialText()}
-            onPost={url => setModal({ kind: 'complete', url })}
+            onPost={url => {
+              setModal({ kind: 'complete', url })
+              openXCompose()
+            }}
             onLogout={() => { setSession(null); setModal({ kind: 'auth', closeable: false }) }}
           />
         )}

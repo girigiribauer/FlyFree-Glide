@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+
 import { extractFirstUrl } from './ogp'
 
 describe('extractFirstUrl', () => {

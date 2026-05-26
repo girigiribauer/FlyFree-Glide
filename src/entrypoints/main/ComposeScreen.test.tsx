@@ -1,8 +1,10 @@
-import { render, screen, fireEvent } from '@solidjs/testing-library'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
-import ComposeScreen from './ComposeScreen'
 import type { OAuthSession } from '@atproto/oauth-client-browser'
+import { fireEvent,render, screen } from '@solidjs/testing-library'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
+
+import { getOAuthClient } from '../../lib/client'
 import { MAX_GRAPHEMES } from '../../lib/composer'
+import ComposeScreen from './ComposeScreen'
 
 vi.mock('../../lib/post', () => ({
   postToBluesky: vi.fn().mockResolvedValue('https://bsky.app/profile/test/post/abc'),
@@ -134,5 +136,44 @@ describe('ComposeScreen — 投稿', () => {
     expect(screen.getByText('Posting...')).toBeDisabled()
     expect(screen.getByText(/画像を追加/)).toBeDisabled()
     resolvePost!('https://bsky.app/profile/test/post/abc')
+  })
+
+  test('テキストのみ投稿後に xPending が storage に保存される', async () => {
+    renderScreen('hello')
+    fireEvent.click(screen.getByText('Post to Bluesky'))
+    await vi.waitFor(() =>
+      expect(browser.storage.session.set).toHaveBeenCalledWith({
+        xPending: { text: 'hello', images: [] },
+      })
+    )
+  })
+
+  test('画像つき投稿後に xPending に base64 画像が保存される', async () => {
+    renderScreen('hello')
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(fileInput, { target: { files: [new File(['img'], 'photo.jpg', { type: 'image/jpeg' })] } })
+    fireEvent.click(screen.getByText('Post to Bluesky'))
+    await vi.waitFor(() =>
+      expect(browser.storage.session.set).toHaveBeenCalledWith({
+        xPending: {
+          text: 'hello',
+          images: [{ data: 'AQID', mimeType: 'image/jpeg', name: 'photo.jpg' }],
+        },
+      })
+    )
+  })
+})
+
+describe('ComposeScreen — ログアウト', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  test('Logout クリックで revoke が呼ばれ onLogout が実行される', async () => {
+    const onLogout = vi.fn()
+    render(() => (
+      <ComposeScreen session={mockSession} initialText="" onPost={vi.fn()} onLogout={onLogout} />
+    ))
+    fireEvent.click(screen.getByText('Logout'))
+    await vi.waitFor(() => expect(vi.mocked(getOAuthClient)().revoke).toHaveBeenCalledWith(mockSession.did))
+    expect(onLogout).toHaveBeenCalled()
   })
 })

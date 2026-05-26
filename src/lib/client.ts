@@ -3,6 +3,8 @@ import { BrowserOAuthClient } from '@atproto/oauth-client-browser'
 export const OAUTH_CALLBACK_URL =
   'https://girigiribauer.github.io/FlyFree-Glide/oauth/callback'
 
+export const DEFAULT_PDS_URL = 'https://bsky.social'
+
 const CLIENT_METADATA = {
   client_id:
     'https://girigiribauer.github.io/FlyFree-Glide/client-metadata.json',
@@ -18,12 +20,14 @@ const CLIENT_METADATA = {
 }
 
 let _client: BrowserOAuthClient | undefined
+let _handleResolver: string | undefined
 
-export function getOAuthClient(): BrowserOAuthClient {
-  if (!_client) {
+export function getOAuthClient(handleResolver = DEFAULT_PDS_URL): BrowserOAuthClient {
+  if (!_client || _handleResolver !== handleResolver) {
+    _handleResolver = handleResolver
     _client = new BrowserOAuthClient({
       clientMetadata: CLIENT_METADATA,
-      handleResolver: 'https://bsky.social',
+      handleResolver,
     })
   }
   return _client

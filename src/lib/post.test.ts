@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { postToBluesky } from './post'
+
 import type { OptimizedImage } from './image'
+import { postToBluesky } from './post'
 
 vi.mock('./ogp', () => ({
   extractFirstUrl: vi.fn((text: string) => {
@@ -117,12 +118,6 @@ describe('postToBluesky', () => {
   })
 
   test('画像があるときはリンクカード embed は付与されない', async () => {
-    vi.mocked(fetchLinkCard).mockResolvedValueOnce({
-      url: 'https://example.com',
-      title: 'Test',
-      description: '',
-      thumbUrl: null,
-    })
     const agent = mockAgent()
     const images = [makeImage()]
     await postToBluesky(agent, 'https://example.com', images)
@@ -143,5 +138,46 @@ describe('postToBluesky', () => {
   test('agent.post が失敗したらエラーが伝播する', async () => {
     const agent = mockAgent(vi.fn().mockRejectedValue(new Error('network error')))
     await expect(postToBluesky(agent, 'hello')).rejects.toThrow('network error')
+  })
+
+  test('リンクカード生成時にテキストから URL が除去される', async () => {
+    vi.mocked(fetchLinkCard).mockResolvedValueOnce({
+      url: 'https://example.com',
+      title: 'Test',
+      description: '',
+      thumbUrl: null,
+    })
+    const agent = mockAgent()
+    await postToBluesky(agent, 'Check this out https://example.com')
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.text).toBe('Check this out')
+  })
+
+  test('URL のみのテキストはリンクカード生成後に空になる', async () => {
+    vi.mocked(fetchLinkCard).mockResolvedValueOnce({
+      url: 'https://example.com',
+      title: 'Test',
+      description: '',
+      thumbUrl: null,
+    })
+    const agent = mockAgent()
+    await postToBluesky(agent, 'https://example.com')
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.text).toBe('')
+  })
+
+  test('リンクカード取得失敗時は URL がテキストに残る', async () => {
+    vi.mocked(fetchLinkCard).mockResolvedValueOnce(null)
+    const agent = mockAgent()
+    await postToBluesky(agent, 'https://example.com を見てください')
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.text).toContain('https://example.com')
+  })
+
+  test('画像投稿時は URL がテキストに残る', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'https://example.com', [makeImage()])
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.text).toBe('https://example.com')
   })
 })
