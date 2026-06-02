@@ -1,3 +1,4 @@
+import { t } from './i18n'
 import { langNativeLabel,LANGS } from './langs'
 
 export type ContentLabel = 'sexual' | 'nudity' | 'porn' | 'graphic-media'
@@ -27,6 +28,8 @@ export interface LabelOption {
   labels: ContentLabel[]
 }
 
+export type UiLang = 'ja' | 'en'
+
 export interface Settings {
   autoClose: AutoCloseMode
   startBlank: boolean
@@ -34,6 +37,7 @@ export interface Settings {
   xAutoOpen: boolean
   xCliffhanger: boolean
   bskyXShare: boolean
+  uiLang: UiLang
   langOptions: LangOption[]
   reactionOptions: ReactionOption[]
   labelOptions: LabelOption[]
@@ -65,40 +69,41 @@ export const DEFAULT_SETTINGS: Settings = {
   xAutoOpen: true,
   xCliffhanger: false,
   bskyXShare: true,
+  uiLang: 'ja',
   langOptions: [makeDefaultLangOption()],
   reactionOptions: [makeDefaultReactionOption()],
   labelOptions: [makeDefaultLabelOption()],
 }
 
 export function formatLangOption(opt: LangOption): string {
-  return opt.langs.length > 0 ? opt.langs.map(langNativeLabel).join(' / ') : '言語指定なし'
+  return opt.langs.length > 0 ? opt.langs.map(langNativeLabel).join(' / ') : t('noLang')
 }
 
-const REACTION_REPLY: Record<string, string> = {
-  everybody: '誰でも',
-  nobody: '不可',
-}
 const LABEL_ORDER: ContentLabel[] = ['sexual', 'nudity', 'porn', 'graphic-media']
-const LABEL_NAMES: Record<string, string> = {
-  sexual: 'きわどい', nudity: 'ヌード', porn: '成人向け', 'graphic-media': '生々しいメディア',
-}
 
 export function formatReactionOption(opt: ReactionOption): string {
   const tg = opt.threadgate
-  let reply = REACTION_REPLY[tg.type]
+  const reactionReply: Record<string, string> = {
+    everybody: t('replyEverybody'),
+    nobody: t('replyNobody'),
+  }
+  let reply = reactionReply[tg.type]
   if (!reply) {
     const parts: string[] = []
-    if (tg.allowMention) parts.push('メンション')
-    if (tg.allowFollowing) parts.push('フォロー')
-    if (tg.allowFollower) parts.push('フォロワー')
-    reply = parts.length > 0 ? parts.join('・') : '不可'
+    if (tg.allowMention) parts.push(t('shortMention'))
+    if (tg.allowFollowing) parts.push(t('shortFollowing'))
+    if (tg.allowFollower) parts.push(t('allowFollower'))
+    reply = parts.length > 0 ? parts.join(t('formatSep')) : t('replyNobody')
   }
-  return `${reply} / 引用: ${opt.disableEmbeds ? '不可' : '可'}`
+  return `${reply} / ${t('formatQuoteLabel')}: ${opt.disableEmbeds ? t('formatQuoteDisabled') : t('formatQuoteAllowed')}`
 }
 
 export function formatLabelOption(opt: LabelOption): string {
+  const labelNames: Record<string, string> = {
+    sexual: t('labelSexual'), nudity: t('labelNudity'), porn: t('labelPorn'), 'graphic-media': t('labelGraphicMedia'),
+  }
   const sorted = [...opt.labels].sort((a, b) => LABEL_ORDER.indexOf(a) - LABEL_ORDER.indexOf(b))
-  return sorted.length > 0 ? sorted.map(l => LABEL_NAMES[l] ?? l).join(' / ') : 'ラベルなし'
+  return sorted.length > 0 ? sorted.map(l => labelNames[l] ?? l).join(' / ') : t('noLabel')
 }
 
 const SUPPORTED_LANGS: string[] = LANGS.map(l => l.code)
@@ -126,12 +131,16 @@ interface LegacyStoredSettings {
   xEnabled?: boolean
 }
 
+function detectUiLang(): UiLang {
+  return navigator.language?.startsWith('ja') ? 'ja' : 'en'
+}
+
 export async function loadSettings(): Promise<Settings> {
   const stored = await browser.storage.sync.get('settings')
   if (!stored.settings) {
-    return { ...DEFAULT_SETTINGS, langOptions: [makeDefaultLangOption(detectDefaultLangs())] }
+    return { ...DEFAULT_SETTINGS, uiLang: detectUiLang(), langOptions: [makeDefaultLangOption(detectDefaultLangs())] }
   }
-  const raw = stored.settings as Partial<Settings> & LegacyStoredSettings
+  const raw = stored.settings as Partial<Settings> & LegacyStoredSettings & { uiLang?: string }
 
   const autoClose: AutoCloseMode = typeof raw.autoClose === 'boolean'
     ? (raw.autoClose ? 'immediate' : 'manual')
@@ -141,12 +150,15 @@ export async function loadSettings(): Promise<Settings> {
 
   const xHidden: boolean = raw.xHidden ?? (raw.xEnabled !== undefined ? !raw.xEnabled : DEFAULT_SETTINGS.xHidden)
 
+  const uiLang: UiLang = (raw.uiLang === 'ja' || raw.uiLang === 'en') ? raw.uiLang : detectUiLang()
+
   return {
     ...DEFAULT_SETTINGS,
     ...raw,
     autoClose,
     startBlank,
     xHidden,
+    uiLang,
     langOptions: raw.langOptions?.length ? raw.langOptions : [makeDefaultLangOption(detectDefaultLangs())],
     reactionOptions: raw.reactionOptions?.length ? raw.reactionOptions : [makeDefaultReactionOption()],
     labelOptions: raw.labelOptions?.length ? raw.labelOptions : [makeDefaultLabelOption()],

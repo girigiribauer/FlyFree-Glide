@@ -1,6 +1,7 @@
 import { For, Show } from 'solid-js'
 
 import type { AccountInfo } from '../lib/accounts'
+import { t } from '../lib/i18n'
 import { PersonIcon } from './Icons'
 import styles from './UserMenu.module.css'
 
@@ -20,7 +21,7 @@ export default function UserMenu(props: Props) {
       <button
         class={styles.button}
         type="button"
-        aria-label="アカウントメニュー"
+        aria-label={t('accountMenuAriaLabel')}
         onClick={props.onToggle}
       >
         <div class={styles.userIcon}>
@@ -35,7 +36,7 @@ export default function UserMenu(props: Props) {
       <Show when={props.open}>
         <div class={styles.popup}>
           <Show when={props.accounts.length > 0}>
-            <div class={styles.popupHeader}>アカウントの切り替え</div>
+            <div class={styles.popupHeader}>{t('switchAccount')}</div>
             <hr class={styles.divider} />
             <For each={props.accounts}>
               {account => (
@@ -56,10 +57,10 @@ export default function UserMenu(props: Props) {
             <hr class={styles.divider} />
           </Show>
           <button class={styles.item} type="button" onClick={props.onAddAccount}>
-            別のアカウントを追加
+            {t('addAccount')}
           </button>
           <button class={styles.item} type="button" onClick={props.onLogout}>
-            ログアウト
+            {t('logout')}
           </button>
         </div>
       </Show>

@@ -3,6 +3,12 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 import OptionsApp from './OptionsApp'
 
+function stubReload() {
+  const reload = vi.fn()
+  vi.stubGlobal('location', { reload, href: 'http://localhost/' })
+  return reload
+}
+
 function mockSettings(overrides: Record<string, unknown> = {}) {
   ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
     settings: overrides,
@@ -112,7 +118,8 @@ describe('OptionsApp — X に蓋をする', () => {
   test('「X に蓋をする」をオフにすると X サブ設定が復活する', async () => {
     mockSettings({ xHidden: true })
     render(() => <OptionsApp />)
-    await vi.waitFor(() => expect(screen.queryByText('投稿後に X の投稿画面を自動で開く')).not.toBeInTheDocument())
+    await vi.waitFor(() => expect(screen.getByRole('checkbox', { name: 'X に蓋をする' })).toBeInTheDocument())
+    expect(screen.queryByText('投稿後に X の投稿画面を自動で開く')).not.toBeInTheDocument()
 
     fireEvent.change(screen.getByRole('checkbox', { name: 'X に蓋をする' }), { target: { checked: false } })
 
@@ -151,5 +158,55 @@ describe('OptionsApp — startBlank', () => {
         settings: expect.objectContaining({ startBlank: true }),
       })
     )
+  })
+})
+
+describe('OptionsApp — 表示言語', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.stubGlobal('navigator', { language: 'ja' })
+  })
+
+  test('uiLang が ja のとき「日本語」が選択されている（初期値）', async () => {
+    mockSettings({})
+    render(() => <OptionsApp />)
+    await vi.waitFor(() => expect(screen.getByText('表示言語')).toBeInTheDocument())
+    expect(screen.getByDisplayValue('日本語')).toBeInTheDocument()
+  })
+
+  test('uiLang が ja のとき「日本語」が選択されている', async () => {
+    mockSettings({ uiLang: 'ja' })
+    render(() => <OptionsApp />)
+    await vi.waitFor(() => expect(screen.getByText('表示言語')).toBeInTheDocument())
+    expect(screen.getByDisplayValue('日本語')).toBeInTheDocument()
+  })
+
+  test('uiLang が en のとき英語UIで表示され「English」が選択されている', async () => {
+    mockSettings({ uiLang: 'en' })
+    render(() => <OptionsApp />)
+    await vi.waitFor(() => expect(screen.getByText('Display language')).toBeInTheDocument())
+    expect(screen.getByDisplayValue('English')).toBeInTheDocument()
+  })
+
+  test('言語を変更すると saveSettings が呼ばれる', async () => {
+    stubReload()
+    mockSettings({ uiLang: 'ja' })
+    render(() => <OptionsApp />)
+    await vi.waitFor(() => expect(screen.getByText('表示言語')).toBeInTheDocument())
+    fireEvent.change(screen.getByDisplayValue('日本語'), { target: { value: 'en' } })
+    await vi.waitFor(() =>
+      expect(browser.storage.sync.set).toHaveBeenCalledWith({
+        settings: expect.objectContaining({ uiLang: 'en' }),
+      })
+    )
+  })
+
+  test('言語を変更すると location.reload が呼ばれる', async () => {
+    const reload = stubReload()
+    mockSettings({ uiLang: 'ja' })
+    render(() => <OptionsApp />)
+    await vi.waitFor(() => expect(screen.getByText('表示言語')).toBeInTheDocument())
+    fireEvent.change(screen.getByDisplayValue('日本語'), { target: { value: 'en' } })
+    await vi.waitFor(() => expect(reload).toHaveBeenCalled())
   })
 })

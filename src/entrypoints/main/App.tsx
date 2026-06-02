@@ -6,6 +6,7 @@ import CompleteScreen from '../../components/CompleteScreen'
 import ComposeScreen from '../../components/ComposeScreen'
 import LoadingScreen from '../../components/LoadingScreen'
 import { getStoredDids } from '../../lib/accounts'
+import { setLang } from '../../lib/i18n'
 import { composeInitialText } from '../../lib/initialText'
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from '../../lib/settings'
 import { openXCompose, type XPending } from '../../lib/xpost'
@@ -27,7 +28,7 @@ export default function App() {
     const [stored, dids] = await Promise.all([
       browser.storage.session.get('pendingPage'),
       getStoredDids(),
-      loadSettings().then(setSettings),
+      loadSettings().then(s => { setLang(s.uiLang); setSettings(s) }),
     ])
     const page = stored.pendingPage as { url?: string; title?: string } | undefined
     if (page && !settings().startBlank) setInitialText(composeInitialText(page))

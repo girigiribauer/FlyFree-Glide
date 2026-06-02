@@ -1,6 +1,7 @@
 import { createSignal, onCleanup, onMount, Show } from 'solid-js'
 
 import { AUTOCLOSE_COUNTDOWN_SEC } from '../lib/constants'
+import { t } from '../lib/i18n'
 import styles from './CompleteScreen.module.css'
 
 interface Props {
@@ -37,7 +38,7 @@ function XIcon() {
 
 function ExternalLinkIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <svg class={styles.externalLinkIcon} width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
       <path d="M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
     </svg>
   )
@@ -87,7 +88,7 @@ export default function CompleteScreen(props: Props) {
               <SuccessBadge />
             </div>
             <span class={styles.rowContent}>
-              投稿しました！
+              {t('posted')}
               <ExternalLinkIcon />
             </span>
           </a>
@@ -97,7 +98,7 @@ export default function CompleteScreen(props: Props) {
             <button class={styles.row} type="button" onClick={props.onOpenX}>
               <XIcon />
               <span class={styles.rowContent}>
-                投稿画面を開く
+                {t('openPostScreen')}
                 <ExternalLinkIcon />
               </span>
             </button>
@@ -106,7 +107,7 @@ export default function CompleteScreen(props: Props) {
       </div>
 
       <Show when={props.countdown}>
-        <p class={styles.countdown}>{count()}秒後にこのウィンドウを自動で閉じます</p>
+        <p class={styles.countdown}>{t('autoCloseCountdown', { count: count() })}</p>
       </Show>
 
       <div class={styles.logo}>

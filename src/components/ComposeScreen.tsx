@@ -11,6 +11,7 @@ import { useMentionSearch } from '../hooks/useMentionSearch'
 import type { AccountInfo } from '../lib/accounts'
 import { canPost, MAX_GRAPHEMES, usedGraphemes } from '../lib/composer'
 import { MAX_IMAGE_SIZE } from '../lib/constants'
+import { getLang, t } from '../lib/i18n'
 import { optimizeImage } from '../lib/image'
 import { computeInsert, parseMention } from '../lib/mention'
 import type { LinkCard } from '../lib/ogp'
@@ -385,7 +386,7 @@ export default function ComposeScreen(props: Props) {
             onClick={post}
             disabled={posting() || !bskyCanPost()}
           >
-            {posting() ? '投稿しています...' : 'Bluesky に投稿'}
+            {posting() ? t('posting') : t('postButton')}
           </button>
         </div>
       </header>
@@ -407,7 +408,7 @@ export default function ComposeScreen(props: Props) {
           />
           <textarea
             class={styles.textarea}
-            placeholder="今なにしてる？"
+            placeholder={t('composePlaceholder')}
             value={text()}
             ref={textareaRef}
             onInput={handleTextareaInput}
@@ -443,10 +444,10 @@ export default function ComposeScreen(props: Props) {
           <div class={styles.linkCardOuter}>
             <div class={styles.linkCard}>
               <Show when={linkCard.fetchingCard()}>
-                <span class={styles.linkCardFetching}>リンクカードを取得中...</span>
+                <span class={styles.linkCardFetching}>{t('linkCardFetching')}</span>
               </Show>
               <Show when={!linkCard.fetchingCard() && linkCard.linkCard() === null}>
-                <span class={styles.linkCardFailed}>リンクカードを取得できませんでした</span>
+                <span class={styles.linkCardFailed}>{t('linkCardFailed')}</span>
               </Show>
               <Show when={linkCard.linkCard()}>
                 {card => (
@@ -465,7 +466,7 @@ export default function ComposeScreen(props: Props) {
             <button
               class={styles.linkCardDismiss}
               type="button"
-              aria-label="リンクカードを削除"
+              aria-label={t('dismissLinkCard')}
               onClick={linkCard.dismiss}
             >×</button>
           </div>
@@ -476,7 +477,7 @@ export default function ComposeScreen(props: Props) {
           <Chip
             icon={<ChipLangIcon />}
             value={formatLangOption(selectedLang())}
-            header="言語"
+            header={t('chipLang')}
             options={props.settings.langOptions.map(o => ({ id: o.id, label: formatLangOption(o) }))}
             selectedId={selectedLangId()}
             open={openPopup() === 'lang'}
@@ -487,7 +488,7 @@ export default function ComposeScreen(props: Props) {
           <Chip
             icon={<ChipReactionIcon />}
             value={formatReactionOption(selectedReaction())}
-            header="返信・引用"
+            header={t('chipReaction')}
             options={props.settings.reactionOptions.map(o => ({ id: o.id, label: formatReactionOption(o) }))}
             selectedId={selectedReactionId()}
             open={openPopup() === 'reaction'}
@@ -499,7 +500,7 @@ export default function ComposeScreen(props: Props) {
             <Chip
               icon={<ChipLabelIcon />}
               value={formatLabelOption(selectedLabel())}
-              header="コンテンツラベル"
+              header={t('chipLabel')}
               options={props.settings.labelOptions.map(o => ({ id: o.id, label: formatLabelOption(o) }))}
               selectedId={selectedLabelId()}
               open={openPopup() === 'label'}
@@ -511,7 +512,7 @@ export default function ComposeScreen(props: Props) {
           <Show when={!props.settings.xHidden}>
             <button class={styles.chip} type="button" onClick={() => props.onSettingsChange({ xCliffhanger: !props.settings.xCliffhanger })}>
               <span class={styles.chipIcon}><ChipXIcon /></span>
-              <span class={styles.chipValue}>{props.settings.xCliffhanger ? 'チラ見せモードON' : 'チラ見せモードOFF'}</span>
+              <span class={styles.chipValue}>{props.settings.xCliffhanger ? t('cliffhangerOn') : t('cliffhangerOff')}</span>
             </button>
           </Show>
         </div>
@@ -522,7 +523,7 @@ export default function ComposeScreen(props: Props) {
         <Show when={posting()}>
           <div class={styles.footerLeft}>
             <div class={styles.footerSpinner} />
-            <span class={styles.footerMessage}>画像をアップロードしています...</span>
+            <span class={styles.footerMessage}>{t('uploadingImages')}</span>
           </div>
         </Show>
 
@@ -532,7 +533,7 @@ export default function ComposeScreen(props: Props) {
             <span class={styles.footerErrorMsg}>{error()}</span>
           </div>
           <button class={styles.footerErrorClose} type="button" onClick={() => setError('')}>
-            閉じる
+            {t('close')}
           </button>
         </Show>
 
@@ -541,7 +542,7 @@ export default function ComposeScreen(props: Props) {
             <button
               class={styles.iconButton}
               type="button"
-              aria-label="画像を追加"
+              aria-label={t('addImage')}
               disabled={posting() || images.imageEntries().length >= 4}
               onClick={() => fileInputRef?.click()}
             >
@@ -551,7 +552,7 @@ export default function ComposeScreen(props: Props) {
               <button
                 class={styles.iconButton}
                 type="button"
-                aria-label="絵文字を追加"
+                aria-label={t('addEmoji')}
                 disabled={posting()}
                 onClick={openEmojiPicker}
               >
@@ -568,7 +569,7 @@ export default function ComposeScreen(props: Props) {
                       }
                     }}
                     theme="light"
-                    locale="ja"
+                    locale={getLang()}
                     style="height: 320px"
                   />
                 </div>
@@ -594,7 +595,7 @@ export default function ComposeScreen(props: Props) {
                 </span>
               </Show>
             </div>
-            <button class={styles.footerDetailBtn} type="button">詳細設定</button>
+            <button class={styles.footerDetailBtn} type="button">{t('advancedSettings')}</button>
           </div>
         </Show>
       </footer>
@@ -615,10 +616,10 @@ export default function ComposeScreen(props: Props) {
           style={{ top: `${mentionPos().top}px`, left: `${mentionPos().left}px` }}
         >
           <Show when={mentionSearch.loading()}>
-            <div class={styles.mentionStatus}>検索中...</div>
+            <div class={styles.mentionStatus}>{t('searching')}</div>
           </Show>
           <Show when={!mentionSearch.loading() && mentionSearch.candidates().length === 0 && (mentionQuery() ?? '').length > 0}>
-            <div class={styles.mentionStatus}>候補が見つかりません</div>
+            <div class={styles.mentionStatus}>{t('noCandidates')}</div>
           </Show>
           <For each={mentionSearch.candidates()}>
             {(c, i) => (

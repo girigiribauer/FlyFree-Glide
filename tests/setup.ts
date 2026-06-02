@@ -1,9 +1,16 @@
 import '@testing-library/jest-dom/vitest'
 
 import { cleanup } from '@solidjs/testing-library'
-import { afterEach,vi } from 'vitest'
+import { afterEach, beforeEach, vi } from 'vitest'
+
+import { resetLang } from '../src/lib/i18n'
 
 afterEach(cleanup)
+
+beforeEach(() => {
+  vi.stubGlobal('navigator', { language: 'ja' })
+  resetLang()
+})
 
 vi.spyOn(window, 'close').mockImplementation(() => {})
 

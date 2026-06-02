@@ -161,6 +161,32 @@ describe('loadSettings', () => {
     expect(settings.labelOptions).toHaveLength(1)
     expect(settings.labelOptions[0].labels).toEqual([])
   })
+
+  test('uiLang が保存済みのとき読み込む', async () => {
+    ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      settings: { uiLang: 'en' },
+    })
+    const settings = await loadSettings()
+    expect(settings.uiLang).toBe('en')
+  })
+
+  test('uiLang が未保存のとき navigator.language から検出する', async () => {
+    vi.stubGlobal('navigator', { language: 'ja' })
+    ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      settings: {},
+    })
+    const settings = await loadSettings()
+    expect(settings.uiLang).toBe('ja')
+  })
+
+  test('uiLang が旧値 "auto" で保存されていても navigator.language から検出する', async () => {
+    vi.stubGlobal('navigator', { language: 'en-US' })
+    ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      settings: { uiLang: 'auto' },
+    })
+    const settings = await loadSettings()
+    expect(settings.uiLang).toBe('en')
+  })
 })
 
 describe('saveSettings', () => {

@@ -26,7 +26,7 @@
   display: flex;
   align-items: center;
   width: 194px;
-  height: 36px;
+  min-height: 36px;
   gap: 10px;
   text-decoration: none;
   background: none;
@@ -60,6 +60,7 @@
   flex: 1;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
   font-size: 18px;
   font-weight: 700;
@@ -67,6 +68,11 @@
   color: var(--color-primary);
   align-self: stretch;
   border-bottom: 1px solid var(--color-primary);
+}
+
+.externalLinkIcon {
+  margin-top: 3px;
+  flex-shrink: 0;
 }
 
 .divider {

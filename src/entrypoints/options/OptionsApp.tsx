@@ -2,6 +2,7 @@ import { createSignal, For, onMount, Show } from 'solid-js'
 
 import LangSelect from '../../components/LangSelect'
 import Toggle from '../../components/Toggle'
+import { setLang, t } from '../../lib/i18n'
 import {
   type AutoCloseMode,
   type ContentLabel,
@@ -19,14 +20,19 @@ import {
   saveSettings,
   type Settings,
   type ThreadgateSettings,
+  type UiLang,
 } from '../../lib/settings'
 import styles from './OptionsApp.module.css'
 
 export default function OptionsApp() {
   const [settings, setSettings] = createSignal<Settings>(DEFAULT_SETTINGS)
+  const [loaded, setLoaded] = createSignal(false)
 
   onMount(async () => {
-    setSettings(await loadSettings())
+    const s = await loadSettings()
+    setLang(s.uiLang)
+    setSettings(s)
+    setLoaded(true)
   })
 
   async function update<K extends keyof Settings>(key: K, value: Settings[K]) {
@@ -102,11 +108,12 @@ export default function OptionsApp() {
         <img src="/logo.png" width={113} height={37} alt="FlyFree Glide" />
       </header>
 
+      <Show when={loaded()}>
       <section class={styles.section}>
-        <h2 class={styles.sectionTitle}>全般</h2>
+        <h2 class={styles.sectionTitle}>{t('sectionGeneral')}</h2>
         <div class={styles.row}>
           <div class={styles.rowLabel}>
-            投稿後の動作
+            {t('postBehavior')}
           </div>
           <div class={styles.radioGroup}>
             {(['immediate', 'countdown', 'manual'] as const).map(mode => (
@@ -118,17 +125,32 @@ export default function OptionsApp() {
                   checked={settings().autoClose === mode}
                   onChange={() => update('autoClose', mode as AutoCloseMode)}
                 />
-                {{ immediate: 'すぐ閉じる', countdown: '10秒後に閉じる', manual: '閉じない' }[mode]}
+                {{ immediate: t('closeImmediately'), countdown: t('closeAfterCountdown'), manual: t('keepOpen') }[mode]}
               </label>
             ))}
           </div>
         </div>
         <div class={styles.row}>
           <div class={styles.rowLabel}>
-            空白で開く
-            <div class={styles.rowDescription}>デフォルトは開いているページのタイトルと URL を自動入力します</div>
+            {t('startBlank')}
+            <div class={styles.rowDescription}>{t('startBlankDesc')}</div>
           </div>
-          <Toggle checked={settings().startBlank} onChange={v => update('startBlank', v)} aria-label="空白で開く" />
+          <Toggle checked={settings().startBlank} onChange={v => update('startBlank', v)} aria-label={t('startBlank')} />
+        </div>
+        <div class={styles.row}>
+          <div class={styles.rowLabel}>{t('uiLangLabel')}</div>
+          <select
+            class={styles.select}
+            value={settings().uiLang}
+            onChange={async e => {
+              const uiLang = e.currentTarget.value as UiLang
+              await update('uiLang', uiLang)
+              location.reload()
+            }}
+          >
+            <option value="ja">日本語</option>
+            <option value="en">English</option>
+          </select>
         </div>
       </section>
 
@@ -136,30 +158,30 @@ export default function OptionsApp() {
         <h2 class={styles.sectionTitle}>X</h2>
         <div class={styles.row}>
           <div class={styles.rowLabel}>
-            X に蓋をする
-            <div class={styles.rowDescription}>アイコンやカウンターなど、X に関連するすべての表示が画面に出なくなります</div>
+            {t('xHiddenLabel')}
+            <div class={styles.rowDescription}>{t('xHiddenDesc')}</div>
           </div>
-          <Toggle checked={settings().xHidden} onChange={v => update('xHidden', v)} aria-label="X に蓋をする" />
+          <Toggle checked={settings().xHidden} onChange={v => update('xHidden', v)} aria-label={t('xHiddenLabel')} />
         </div>
         <Show when={!settings().xHidden}>
           <div class={styles.row}>
             <div class={styles.rowLabel}>
-              「Xにも投稿」を追加
-              <div class={styles.rowDescription}>公式クライアントの共有メニューに「Xにも投稿」を追加します</div>
+              {t('bskyXShareLabel')}
+              <div class={styles.rowDescription}>{t('bskyXShareDesc')}</div>
             </div>
             <Toggle checked={settings().bskyXShare} onChange={v => update('bskyXShare', v)} />
           </div>
           <div class={styles.row}>
             <div class={styles.rowLabel}>
-              投稿後に X の投稿画面を自動で開く
-              <div class={styles.rowDescription}>Bluesky への投稿完了後、X の投稿画面を自動で開きます</div>
+              {t('xAutoOpenLabel')}
+              <div class={styles.rowDescription}>{t('xAutoOpenDesc')}</div>
             </div>
             <Toggle checked={settings().xAutoOpen} onChange={v => update('xAutoOpen', v)} />
           </div>
           <div class={styles.row}>
             <div class={styles.rowLabel}>
-              チラ見せモード
-              <div class={styles.rowDescription}>途中で投稿をぶった斬りつつ、Bluesky の元投稿にリンクして移行を煽るモードです</div>
+              {t('xCliffhangerLabel')}
+              <div class={styles.rowDescription}>{t('xCliffhangerDesc')}</div>
             </div>
             <Toggle checked={settings().xCliffhanger} onChange={v => update('xCliffhanger', v)} />
           </div>
@@ -167,7 +189,7 @@ export default function OptionsApp() {
       </section>
 
       <section class={styles.section}>
-        <h2 class={styles.sectionTitle}><span class={styles.sectionPrefix}>Bluesky / </span>言語</h2>
+        <h2 class={styles.sectionTitle}><span class={styles.sectionPrefix}>Bluesky / </span>{t('sectionLang')}</h2>
         <For each={settings().langOptions}>
           {opt => (
             <div class={styles.optionCard}>
@@ -177,8 +199,8 @@ export default function OptionsApp() {
                   class={styles.deleteButton}
                   onClick={() => deleteLangOption(opt.id)}
                   disabled={settings().langOptions.length <= 1}
-                  aria-label="削除"
-                >削除</button>
+                  aria-label={t('deleteButton')}
+                >{t('deleteButton')}</button>
               </div>
               <div class={styles.optionBody}>
                 <LangSelect value={opt.langs} onChange={v => updateLangOption(opt.id, { langs: v })} />
@@ -186,11 +208,11 @@ export default function OptionsApp() {
             </div>
           )}
         </For>
-        <button class={styles.addButton} onClick={addLangOption}>+ 追加</button>
+        <button class={styles.addButton} onClick={addLangOption}>{t('addButton')}</button>
       </section>
 
       <section class={styles.section}>
-        <h2 class={styles.sectionTitle}><span class={styles.sectionPrefix}>Bluesky / </span>投稿リアクション</h2>
+        <h2 class={styles.sectionTitle}><span class={styles.sectionPrefix}>Bluesky / </span>{t('sectionReaction')}</h2>
         <For each={settings().reactionOptions}>
           {opt => (
             <div class={styles.optionCard}>
@@ -200,56 +222,56 @@ export default function OptionsApp() {
                   class={styles.deleteButton}
                   onClick={() => deleteReactionOption(opt.id)}
                   disabled={settings().reactionOptions.length <= 1}
-                  aria-label="削除"
-                >削除</button>
+                  aria-label={t('deleteButton')}
+                >{t('deleteButton')}</button>
               </div>
               <div class={styles.optionBody}>
                 <div class={styles.optionField}>
-                  <span class={styles.optionFieldLabel}>返信</span>
+                  <span class={styles.optionFieldLabel}>{t('reply')}</span>
                   <div>
                     <select
                       class={styles.select}
                       value={opt.threadgate.type}
                       onChange={e => updateThreadgate(opt.id, { type: e.currentTarget.value as ThreadgateSettings['type'] })}
                     >
-                      <option value="everybody">誰でも</option>
-                      <option value="custom">カスタム</option>
-                      <option value="nobody">不可</option>
+                      <option value="everybody">{t('replyEverybody')}</option>
+                      <option value="custom">{t('replyCustom')}</option>
+                      <option value="nobody">{t('replyNobody')}</option>
                     </select>
                     <Show when={opt.threadgate.type === 'custom'}>
                       <div class={styles.checkboxGroup}>
                         <label class={styles.checkboxLabel}>
                           <input type="checkbox" checked={opt.threadgate.allowMention}
                             onChange={e => updateThreadgate(opt.id, { allowMention: e.currentTarget.checked })} />
-                          メンションしたユーザー
+                          {t('allowMention')}
                         </label>
                         <label class={styles.checkboxLabel}>
                           <input type="checkbox" checked={opt.threadgate.allowFollowing}
                             onChange={e => updateThreadgate(opt.id, { allowFollowing: e.currentTarget.checked })} />
-                          フォロー中のユーザー
+                          {t('allowFollowing')}
                         </label>
                         <label class={styles.checkboxLabel}>
                           <input type="checkbox" checked={opt.threadgate.allowFollower}
                             onChange={e => updateThreadgate(opt.id, { allowFollower: e.currentTarget.checked })} />
-                          フォロワー
+                          {t('allowFollower')}
                         </label>
                       </div>
                     </Show>
                   </div>
                 </div>
                 <div class={styles.optionField}>
-                  <span class={styles.optionFieldLabel}>引用</span>
+                  <span class={styles.optionFieldLabel}>{t('quote')}</span>
                   <Toggle checked={!opt.disableEmbeds} onChange={v => updateReactionOption(opt.id, { disableEmbeds: !v })} />
                 </div>
               </div>
             </div>
           )}
         </For>
-        <button class={styles.addButton} onClick={addReactionOption}>+ 追加</button>
+        <button class={styles.addButton} onClick={addReactionOption}>{t('addButton')}</button>
       </section>
 
       <section class={styles.section}>
-        <h2 class={styles.sectionTitle}><span class={styles.sectionPrefix}>Bluesky / </span>画像ラベリング</h2>
+        <h2 class={styles.sectionTitle}><span class={styles.sectionPrefix}>Bluesky / </span>{t('sectionLabel')}</h2>
         <For each={settings().labelOptions}>
           {opt => (
             <div class={styles.optionCard}>
@@ -259,12 +281,12 @@ export default function OptionsApp() {
                   class={styles.deleteButton}
                   onClick={() => deleteLabelOption(opt.id)}
                   disabled={settings().labelOptions.length <= 1}
-                  aria-label="削除"
-                >削除</button>
+                  aria-label={t('deleteButton')}
+                >{t('deleteButton')}</button>
               </div>
               <div class={styles.optionBody}>
                 <div class={styles.labelGroup}>
-                  <div class={styles.labelGroupTitle}>成人向けコンテンツ</div>
+                  <div class={styles.labelGroupTitle}>{t('adultContent')}</div>
                   <div class={styles.checkboxGroup}>
                     {([null, 'sexual', 'nudity', 'porn'] as const).map(label => (
                       <label class={styles.checkboxLabel}>
@@ -275,19 +297,19 @@ export default function OptionsApp() {
                             return label === null ? !labels.some(l => ADULT.includes(l)) : labels.includes(label)
                           })()}
                           onChange={() => selectAdultLabel(opt.id, label)} />
-                        {{ sexual: 'きわどい', nudity: 'ヌード', porn: '成人向け（ポルノ等）', '': 'なし' }[label ?? '']}
+                        {{ sexual: t('labelSexualFull'), nudity: t('labelNudityFull'), porn: t('labelPornFull'), '': t('labelNone') }[label ?? '']}
                       </label>
                     ))}
                   </div>
                 </div>
                 <div class={styles.labelGroup}>
-                  <div class={styles.labelGroupTitle}>その他</div>
+                  <div class={styles.labelGroupTitle}>{t('labelOther')}</div>
                   <div class={styles.checkboxGroup}>
                     <label class={styles.checkboxLabel}>
                       <input type="checkbox"
                         checked={settings().labelOptions.find(o => o.id === opt.id)?.labels.includes('graphic-media') ?? false}
                         onChange={e => toggleGraphicMedia(opt.id, e.currentTarget.checked)} />
-                      生々しいメディア（グロ・事故・戦争・災害等）
+                      {t('labelGraphicMediaFull')}
                     </label>
                   </div>
                 </div>
@@ -295,16 +317,17 @@ export default function OptionsApp() {
             </div>
           )}
         </For>
-        <button class={styles.addButton} onClick={addLabelOption}>+ 追加</button>
+        <button class={styles.addButton} onClick={addLabelOption}>{t('addButton')}</button>
       </section>
 
       <section class={styles.section}>
-        <h2 class={styles.sectionTitle}>リンク</h2>
+        <h2 class={styles.sectionTitle}>{t('sectionLinks')}</h2>
         <ul class={styles.links}>
-          <li><a href="https://github.com/girigiribauer/flyfree-glide" target="_blank">GitHub リポジトリ</a></li>
+          <li><a href="https://github.com/girigiribauer/flyfree-glide" target="_blank">{t('githubRepository')}</a></li>
           <li><a href="https://bsky.app/profile/girigiribauer.com" target="_blank">@girigiribauer.com</a></li>
         </ul>
       </section>
+      </Show>
     </main>
   )
 }
