@@ -142,7 +142,7 @@ describe('ComposeScreen — 投稿', () => {
     ))
   })
 
-  test('テキストのみ投稿後に onPost に xPending が渡される', async () => {
+  test('テキストのみ投稿後に onPost に xDraft が渡される', async () => {
     const onPost = vi.fn()
     renderScreen('hello', onPost)
     fireEvent.click(screen.getByText('Bluesky に投稿'))
@@ -154,7 +154,7 @@ describe('ComposeScreen — 投稿', () => {
     )
   })
 
-  test('画像つき投稿後に onPost に xPending が渡される', async () => {
+  test('画像つき投稿後に onPost に xDraft が渡される', async () => {
     const onPost = vi.fn()
     renderScreen('hello', onPost)
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
@@ -177,6 +177,62 @@ describe('ComposeScreen — 投稿', () => {
     renderScreen('hello')
     fireEvent.click(screen.getByText('Bluesky に投稿'))
     await vi.waitFor(() => expect(screen.getByText('network error')).toBeInTheDocument())
+  })
+
+  test('xCliffhanger=false のとき xDraft.text は rawText のまま（Bluesky URL なし）', async () => {
+    const onPost = vi.fn()
+    render(() => (
+      <ComposeScreen
+        session={mockSession}
+        currentUser={mockCurrentUser}
+        initialText="hello"
+        accounts={[]}
+        settings={makeSettings({ xHidden: false, xCliffhanger: false })}
+        onSettingsChange={vi.fn()}
+        onOpenSettings={vi.fn()}
+        onPost={onPost}
+        onSwitchAccount={vi.fn()}
+        onAddAccount={vi.fn()}
+        onLogout={vi.fn()}
+      />
+    ))
+    fireEvent.click(screen.getByText('Bluesky に投稿'))
+    await vi.waitFor(() =>
+      expect(onPost).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ text: 'hello' }),
+      )
+    )
+    const xDraft = onPost.mock.calls[0][1]
+    expect(xDraft.text).not.toContain('bsky.app')
+  })
+
+  test('xCliffhanger=true かつ長文のとき xDraft.text は切り詰め + Bluesky URL', async () => {
+    const onPost = vi.fn()
+    const longText = 'a'.repeat(60)
+    render(() => (
+      <ComposeScreen
+        session={mockSession}
+        currentUser={mockCurrentUser}
+        initialText={longText}
+        accounts={[]}
+        settings={makeSettings({ xHidden: false, xCliffhanger: true })}
+        onSettingsChange={vi.fn()}
+        onOpenSettings={vi.fn()}
+        onPost={onPost}
+        onSwitchAccount={vi.fn()}
+        onAddAccount={vi.fn()}
+        onLogout={vi.fn()}
+      />
+    ))
+    fireEvent.click(screen.getByText('Bluesky に投稿'))
+    await vi.waitFor(() => expect(onPost).toHaveBeenCalled())
+    const xDraft = onPost.mock.calls[0][1]
+    expect(xDraft.text).toContain('bsky.app')
+    expect(xDraft.text).toContain('...')
+    // 切り詰め部分は元テキストの半分程度のはず
+    const beforeEllipsis = xDraft.text.split('...')[0]
+    expect(beforeEllipsis.length).toBeLessThan(longText.length / 2 + 5)
   })
 
   test('投稿失敗後も投稿ボタンが再び有効になる', async () => {

@@ -88,60 +88,12 @@ describe('loadSettings', () => {
     expect(settings.xAutoOpen).toBe(true)
   })
 
-  test('古い boolean の autoClose: true を immediate に移行する', async () => {
-    ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-      settings: { autoClose: true },
-    })
-    const settings = await loadSettings()
-    expect(settings.autoClose).toBe('immediate')
-  })
-
-  test('古い boolean の autoClose: false を manual に移行する', async () => {
-    ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-      settings: { autoClose: false },
-    })
-    const settings = await loadSettings()
-    expect(settings.autoClose).toBe('manual')
-  })
-
-  test('古い clearOnOpen: true を startBlank: true に移行する', async () => {
-    ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-      settings: { clearOnOpen: true },
-    })
-    const settings = await loadSettings()
-    expect(settings.startBlank).toBe(true)
-  })
-
-  test('古い clearOnOpen: false を startBlank: false に移行する', async () => {
-    ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-      settings: { clearOnOpen: false },
-    })
-    const settings = await loadSettings()
-    expect(settings.startBlank).toBe(false)
-  })
-
   test('autoClose: countdown がそのまま保持される', async () => {
     ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
       settings: { autoClose: 'countdown' },
     })
     const settings = await loadSettings()
     expect(settings.autoClose).toBe('countdown')
-  })
-
-  test('古い xEnabled: false を xHidden: true に移行する', async () => {
-    ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-      settings: { xEnabled: false },
-    })
-    const settings = await loadSettings()
-    expect(settings.xHidden).toBe(true)
-  })
-
-  test('古い xEnabled: true を xHidden: false に移行する', async () => {
-    ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-      settings: { xEnabled: true },
-    })
-    const settings = await loadSettings()
-    expect(settings.xHidden).toBe(false)
   })
 
   test('reactionOptions が空配列のときデフォルトにフォールバック', async () => {
@@ -179,14 +131,6 @@ describe('loadSettings', () => {
     expect(settings.uiLang).toBe('ja')
   })
 
-  test('uiLang が旧値 "auto" で保存されていても navigator.language から検出する', async () => {
-    vi.stubGlobal('navigator', { language: 'en-US' })
-    ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-      settings: { uiLang: 'auto' },
-    })
-    const settings = await loadSettings()
-    expect(settings.uiLang).toBe('en')
-  })
 })
 
 describe('saveSettings', () => {

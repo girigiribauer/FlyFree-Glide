@@ -1,5 +1,5 @@
 import { X_SEL } from '../../lib/xDom'
-import type { XPending } from '../../lib/xpost'
+import type { XDraft } from '../../lib/xpost'
 
 function waitForElement(selector: string, timeout = 5000): Promise<Element> {
   return new Promise((resolve, reject) => {
@@ -53,7 +53,7 @@ async function injectText(text: string): Promise<void> {
   textarea.dispatchEvent(event)
 }
 
-async function injectImages(images: XPending['images']): Promise<void> {
+async function injectImages(images: XDraft['images']): Promise<void> {
   const input = await waitForElement(X_SEL.fileInput, 10000).catch(
     () => waitForElement(X_SEL.fileInputFallback, 10000),
   ) as HTMLInputElement
@@ -77,7 +77,7 @@ export default defineContentScript({
   main() {
     window.addEventListener('message', async (e) => {
       if (e.source !== window || e.data?.type !== 'flyfree:inject') return
-      const pending = e.data.pending as XPending
+      const draft = e.data.draft as XDraft
 
       if (isLoginPage()) {
         showBanner('X にログインしていないため、自動入力できませんでした。ログイン後に再度お試しください。')
@@ -86,13 +86,13 @@ export default defineContentScript({
 
       let textFailed = false
       try {
-        await injectText(pending.text)
+        await injectText(draft.text)
       } catch {
         textFailed = true
       }
       let imagesFailed = false
       try {
-        if (pending.images.length > 0) await injectImages(pending.images)
+        if (draft.images.length > 0) await injectImages(draft.images)
       } catch {
         imagesFailed = true
       }
@@ -100,5 +100,6 @@ export default defineContentScript({
         showBanner('X への自動入力に失敗しました。テキスト・画像を手動で入力してください。')
       }
     })
+    document.documentElement.setAttribute('data-flyfree-ready', '1')
   },
 })

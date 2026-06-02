@@ -40,6 +40,14 @@ export function extractText(post: HTMLElement): string {
   return ''
 }
 
+export function extractImageUrls(post: HTMLElement): string[] {
+  const imgs = Array.from(post.querySelectorAll('img[src*="cdn.bsky.app/img/feed_"]')) as HTMLImageElement[]
+  const seen = new Set<string>()
+  return imgs
+    .map(img => img.src.replace('/feed_thumbnail/', '/feed_fullsize/'))
+    .filter(src => { if (seen.has(src)) return false; seen.add(src); return true })
+}
+
 export function extractUrl(post: HTMLElement): string {
   const a = post.querySelector(BSKY_SEL.postLink) as HTMLAnchorElement | null
   if (!a) return ''

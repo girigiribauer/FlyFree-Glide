@@ -25,7 +25,7 @@ export default function UserMenu(props: Props) {
         onClick={props.onToggle}
       >
         <div class={styles.userIcon}>
-          <Show when={props.currentUser.avatarUrl} fallback={<PersonIcon size={22} />}>
+          <Show when={props.currentUser.avatarUrl} fallback={<PersonIcon size={36} />}>
             {url => <img src={url()} alt="" class={styles.userIconImg} />}
           </Show>
         </div>
@@ -46,7 +46,7 @@ export default function UserMenu(props: Props) {
                   onClick={() => props.onSwitchAccount(account.did)}
                 >
                   <div class={styles.itemIcon}>
-                    <Show when={account.avatarUrl} fallback={<PersonIcon size={12} />}>
+                    <Show when={account.avatarUrl} fallback={<PersonIcon size={18} />}>
                       {url => <img src={url()} alt="" class={styles.userIconImg} />}
                     </Show>
                   </div>

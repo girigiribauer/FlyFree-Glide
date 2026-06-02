@@ -20,8 +20,6 @@
   background: var(--color-close);
   border: none;
   cursor: pointer;
-  color: var(--color-white);
-  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -52,7 +52,7 @@ export function countXChars(text: string): number {
 export function composeTeaserText(text: string, blueskyUrl: string): string {
   const segmenter = new Intl.Segmenter()
   const graphemes = [...segmenter.segment(text)].map(s => s.segment)
-  if (graphemes.length < MIN_TEASER_GRAPHEMES) return text
+  if (graphemes.length < MIN_TEASER_GRAPHEMES) return text + '\n' + blueskyUrl
 
   const halfPoint = Math.floor(graphemes.length / 2)
   const maxXChars = X_CHAR_LIMIT - TEASER_ELLIPSIS.length - X_URL_WEIGHT
@@ -91,23 +91,19 @@ export function composeTeaserText(text: string, blueskyUrl: string): string {
   return graphemes.slice(0, cutAt).join('') + TEASER_ELLIPSIS + blueskyUrl
 }
 
-export interface XPendingImage {
+export interface XDraftImage {
   data: string  // base64 encoded — browser.storage.session serializes Uint8Array as {} via JSON
   mimeType: string
   name: string
 }
 
-export interface XPending {
+export interface XDraft {
   text: string
-  images: XPendingImage[]
+  images: XDraftImage[]
 }
 
 export function uint8ToBase64(bytes: Uint8Array): string {
   let binary = ''
   for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i])
   return btoa(binary)
-}
-
-export function openXCompose(): void {
-  void browser.windows.create({ url: X_COMPOSE_URL, type: 'popup', width: X_POPUP_WIDTH, height: X_POPUP_HEIGHT })
 }

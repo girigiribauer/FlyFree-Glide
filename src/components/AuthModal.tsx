@@ -4,6 +4,7 @@ import { createSignal, onCleanup, Show } from 'solid-js'
 import { OAuthCancelledError, startOAuthFlow } from '../lib/auth'
 import { t } from '../lib/i18n'
 import styles from './AuthModal.module.css'
+import { CloseIcon } from './Icons'
 
 interface Props {
   closeable: boolean
@@ -43,7 +44,7 @@ export default function AuthModal(props: Props) {
   return (
     <div class={styles.page}>
       <Show when={props.closeable}>
-        <button class={styles.closeButton} onClick={props.onClose}>×</button>
+        <button class={styles.closeButton} aria-label={t('close')} onClick={props.onClose}><CloseIcon size={14} /></button>
       </Show>
       <div class={styles.contents}>
         <h1 class={styles.title}>{t('loginTitle')}</h1>

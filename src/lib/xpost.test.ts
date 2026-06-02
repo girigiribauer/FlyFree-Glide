@@ -5,9 +5,9 @@ import { composeTeaserText, countXChars, uint8ToBase64 } from './xpost'
 const URL = 'https://bsky.app/profile/test.bsky.social/post/abc123'
 
 describe('composeTeaserText', () => {
-  test('50グラフェム未満のテキストはそのまま返す', () => {
+  test('50グラフェム未満のテキストにも Bluesky URL を付ける', () => {
     const text = 'a'.repeat(49)
-    expect(composeTeaserText(text, URL)).toBe(text)
+    expect(composeTeaserText(text, URL)).toBe(text + '\n' + URL)
   })
 
   test('ちょうど50グラフェムで発動し前半のみになる', () => {

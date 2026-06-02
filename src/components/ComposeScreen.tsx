@@ -19,10 +19,10 @@ import { postToBluesky } from '../lib/post'
 import { buildMirrorHtml } from '../lib/richtext'
 import { formatLabelOption, formatLangOption, formatReactionOption, type Settings } from '../lib/settings'
 import { removeLinkCardUrl } from '../lib/urlHelpers'
-import { composeTeaserText, countXChars, uint8ToBase64, type XPending } from '../lib/xpost'
+import { composeTeaserText, countXChars, uint8ToBase64, type XDraft } from '../lib/xpost'
 import Chip from './Chip'
 import styles from './ComposeScreen.module.css'
-import { BlueskyIcon, ChipLabelIcon, ChipLangIcon, ChipReactionIcon, ChipXIcon, EmojiIcon, ImageIcon, XIcon } from './Icons'
+import { BlueskyIcon, ChipLabelIcon, ChipLangIcon, ChipReactionIcon, ChipXIcon, CloseIcon, EmojiIcon, ImageIcon, XIcon } from './Icons'
 import UserMenu from './UserMenu'
 
 
@@ -36,7 +36,7 @@ interface Props {
   settings: Settings
   onSettingsChange: (patch: Partial<Settings>) => void
   onOpenSettings: () => void
-  onPost: (url: string, xPending: XPending) => void
+  onPost: (url: string, xDraft: XDraft) => void
   onSwitchAccount: (did: string) => void
   onAddAccount: () => void
   onLogout: () => void
@@ -267,14 +267,6 @@ export default function ComposeScreen(props: Props) {
 
   const xRemaining = () => MAX_X_CHARS - xCharCount()
 
-  function buildTeaserBase(rawText: string): string {
-    const cardUrl = linkCard.detectedUrl()
-    if (cardUrl && cardUrl !== linkCard.dismissedUrl() && images.imageEntries().length === 0) {
-      return removeLinkCardUrl(rawText, cardUrl)
-    }
-    return rawText
-  }
-
   async function dryRun() {
     if (!bskyCanPost()) return
     setPosting(true)
@@ -287,15 +279,15 @@ export default function ComposeScreen(props: Props) {
         : []
       const fakeBskyUrl = 'https://bsky.app'
       const rawText = text().trim()
-      const xPending: XPending = {
-        text: props.settings.xCliffhanger ? composeTeaserText(buildTeaserBase(rawText), fakeBskyUrl) : rawText,
+      const xDraft: XDraft = {
+        text: props.settings.xCliffhanger ? composeTeaserText(rawText, fakeBskyUrl) : rawText,
         images: optimizedImages.map((img, i) => ({
           data: uint8ToBase64(img.data),
           mimeType: img.mimeType,
           name: entries[i].file.name,
         })),
       }
-      props.onPost(fakeBskyUrl, xPending)
+      props.onPost(fakeBskyUrl, xDraft)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -326,8 +318,8 @@ export default function ComposeScreen(props: Props) {
         labels: images.imageEntries().length > 0 ? label?.labels : undefined,
       })
       const rawText = text().trim()
-      const xPending: XPending = {
-        text: props.settings.xCliffhanger ? composeTeaserText(buildTeaserBase(rawText), url) : rawText,
+      const xDraft: XDraft = {
+        text: props.settings.xCliffhanger ? composeTeaserText(rawText, url) : rawText,
         images: optimizedImages.map((img, i) => ({
           data: uint8ToBase64(img.data),
           mimeType: img.mimeType,
@@ -338,7 +330,7 @@ export default function ComposeScreen(props: Props) {
         setText('')
         images.clearEntries()
       })
-      props.onPost(url, xPending)
+      props.onPost(url, xDraft)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -433,7 +425,7 @@ export default function ComposeScreen(props: Props) {
                     type="button"
                     onClick={() => images.removeImage(i())}
                     disabled={posting()}
-                  >×</button>
+                  ><CloseIcon /></button>
                 </div>
               )}
             </For>
@@ -468,7 +460,7 @@ export default function ComposeScreen(props: Props) {
               type="button"
               aria-label={t('dismissLinkCard')}
               onClick={linkCard.dismiss}
-            >×</button>
+            ><CloseIcon /></button>
           </div>
         </Show>
 
@@ -595,7 +587,7 @@ export default function ComposeScreen(props: Props) {
                 </span>
               </Show>
             </div>
-            <button class={styles.footerDetailBtn} type="button">{t('advancedSettings')}</button>
+            <button class={styles.footerDetailBtn} type="button" onClick={props.onOpenSettings}>{t('advancedSettings')}</button>
           </div>
         </Show>
       </footer>

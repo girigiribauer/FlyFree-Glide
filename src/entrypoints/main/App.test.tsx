@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { optimizeImage } from '../../lib/image'
 import { postToBluesky } from '../../lib/post'
 import { checkOAuthCallback, restoreSession } from '../../lib/session'
-import { openXCompose } from '../../lib/xpost'
 import App from './App'
 
 vi.mock('../../lib/session', () => ({
@@ -22,10 +21,6 @@ vi.mock('../../lib/client', async (importOriginal) => {
 vi.mock('../../lib/image', () => ({
   optimizeImage: vi.fn(),
 }))
-vi.mock('../../lib/xpost', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../lib/xpost')>()
-  return { ...actual, openXCompose: vi.fn() }
-})
 
 const mockSession = { did: 'did:plc:test' } as unknown as OAuthSession
 
@@ -62,6 +57,25 @@ describe('App — セッションなし', () => {
   })
 })
 
+describe('App — アカウント追加', () => {
+  beforeEach(() => {
+    vi.mocked(checkOAuthCallback).mockResolvedValue(null)
+    vi.mocked(restoreSession).mockResolvedValue(mockSession)
+    ;(browser.storage.session.get as ReturnType<typeof vi.fn>).mockResolvedValue({})
+    ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({})
+  })
+
+  test('アカウント追加ボタン押下で ComposeScreen が消えて AuthModal が表示される', async () => {
+    render(() => <App />)
+    await vi.waitFor(() => expect(screen.queryByAltText('FlyFree Glide')).not.toBeInTheDocument())
+    expect(screen.getByText('Bluesky に投稿')).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('アカウントメニュー'))
+    fireEvent.click(screen.getByText('別のアカウントを追加'))
+    await vi.waitFor(() => expect(screen.getByText('Bluesky でログイン')).toBeInTheDocument())
+    expect(screen.queryByText('Bluesky に投稿')).not.toBeInTheDocument()
+  })
+})
+
 describe('App — handlePost の設定反映', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -74,9 +88,10 @@ describe('App — handlePost の設定反映', () => {
     })
     ;(browser.storage.session.set as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
     ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({})
+    ;(browser.runtime.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true })
   })
 
-  test('xAutoOpen が false のとき openXCompose は呼ばれない', async () => {
+  test('xAutoOpen が false のとき openXCompose メッセージは送られない', async () => {
     ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
       settings: { xAutoOpen: false, autoClose: 'manual' },
     })
@@ -84,10 +99,11 @@ describe('App — handlePost の設定反映', () => {
     await vi.waitFor(() => expect(screen.queryByAltText('FlyFree Glide')).not.toBeInTheDocument())
     fireEvent.click(screen.getByText('Bluesky に投稿'))
     await vi.waitFor(() => expect(vi.mocked(postToBluesky)).toHaveBeenCalled())
-    expect(vi.mocked(openXCompose)).not.toHaveBeenCalled()
+    const calls = (browser.runtime.sendMessage as ReturnType<typeof vi.fn>).mock.calls
+    expect(calls.every((c: unknown[]) => (c[0] as { type: string }).type !== 'openXCompose')).toBe(true)
   })
 
-  test('xHidden が true のとき xAutoOpen が true でも openXCompose は呼ばれない', async () => {
+  test('xHidden が true のとき xAutoOpen が true でも openXCompose メッセージは送られない', async () => {
     ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
       settings: { xHidden: true, xAutoOpen: true, autoClose: 'manual' },
     })
@@ -95,7 +111,8 @@ describe('App — handlePost の設定反映', () => {
     await vi.waitFor(() => expect(screen.queryByAltText('FlyFree Glide')).not.toBeInTheDocument())
     fireEvent.click(screen.getByText('Bluesky に投稿'))
     await vi.waitFor(() => expect(vi.mocked(postToBluesky)).toHaveBeenCalled())
-    expect(vi.mocked(openXCompose)).not.toHaveBeenCalled()
+    const calls = (browser.runtime.sendMessage as ReturnType<typeof vi.fn>).mock.calls
+    expect(calls.every((c: unknown[]) => (c[0] as { type: string }).type !== 'openXCompose')).toBe(true)
   })
 
   test('autoClose が countdown のとき CompleteModal が countdown=true で表示される', async () => {
@@ -159,13 +176,17 @@ describe('App — 投稿後の X 連携', () => {
       pendingPage: { title: 'Test Page', url: 'https://example.com' },
     })
     ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({})
+    ;(browser.runtime.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true })
   })
 
-  test('投稿後に X のウィンドウが開く', async () => {
+  test('投稿後に openXCompose メッセージが background に送られる', async () => {
     render(() => <App />)
     await vi.waitFor(() => expect(screen.queryByAltText('FlyFree Glide')).not.toBeInTheDocument())
     fireEvent.click(screen.getByText('Bluesky に投稿'))
-    await vi.waitFor(() => expect(vi.mocked(openXCompose)).toHaveBeenCalled())
+    await vi.waitFor(() => {
+      const calls = (browser.runtime.sendMessage as ReturnType<typeof vi.fn>).mock.calls
+      expect(calls.some((c: unknown[]) => (c[0] as { type: string }).type === 'openXCompose')).toBe(true)
+    })
   })
 
   test('autoClose が manual のとき投稿後に ComposeScreen が消えて CompleteModal が表示される', async () => {
@@ -180,14 +201,47 @@ describe('App — 投稿後の X 連携', () => {
     expect(screen.queryByText('Bluesky に投稿')).not.toBeInTheDocument()
   })
 
-  test('Bluesky 投稿が完了してから X のウィンドウが開く', async () => {
+  test('xAutoOpen が true のとき CompleteScreen は X ウィンドウ作成を待たずに表示される', async () => {
+    ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      settings: { xAutoOpen: true, autoClose: 'manual' },
+    })
+    let resolveOpenXCompose!: () => void
+    ;(browser.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(
+      (msg: { type: string }) => msg.type === 'openXCompose'
+        ? new Promise<{ ok: boolean }>(resolve => { resolveOpenXCompose = () => resolve({ ok: true }) })
+        : Promise.resolve({}),
+    )
+    render(() => <App />)
+    await vi.waitFor(() => expect(screen.queryByAltText('FlyFree Glide')).not.toBeInTheDocument())
+    fireEvent.click(screen.getByText('Bluesky に投稿'))
+    await vi.waitFor(() => expect(screen.getByText('投稿しました！')).toBeInTheDocument())
+    resolveOpenXCompose()
+  })
+
+  test('xAutoOpen が false のとき CompleteScreen の「X を開く」ボタン押下で openXCompose メッセージが送られる', async () => {
+    ;(browser.storage.sync.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      settings: { xAutoOpen: false, autoClose: 'manual' },
+    })
+    render(() => <App />)
+    await vi.waitFor(() => expect(screen.queryByAltText('FlyFree Glide')).not.toBeInTheDocument())
+    fireEvent.click(screen.getByText('Bluesky に投稿'))
+    await vi.waitFor(() => expect(screen.getByText('投稿しました！')).toBeInTheDocument())
+    fireEvent.click(screen.getByText('投稿画面を開く'))
+    await vi.waitFor(() => {
+      const calls = (browser.runtime.sendMessage as ReturnType<typeof vi.fn>).mock.calls
+      expect(calls.some((c: unknown[]) => (c[0] as { type: string }).type === 'openXCompose')).toBe(true)
+    })
+  })
+
+  test('Bluesky 投稿が完了してから openXCompose メッセージが送られる', async () => {
     const callOrder: string[] = []
     vi.mocked(postToBluesky).mockImplementationOnce(async () => {
       callOrder.push('postToBluesky')
       return 'https://bsky.app/profile/test/post/abc'
     })
-    vi.mocked(openXCompose).mockImplementationOnce(() => {
-      callOrder.push('openXCompose')
+    ;(browser.runtime.sendMessage as ReturnType<typeof vi.fn>).mockImplementation(async (msg: { type: string }) => {
+      if (msg.type === 'openXCompose') callOrder.push('openXCompose')
+      return { ok: true }
     })
     render(() => <App />)
     await vi.waitFor(() => expect(screen.queryByAltText('FlyFree Glide')).not.toBeInTheDocument())

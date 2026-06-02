@@ -61,7 +61,10 @@ export function startOAuthFlow(handle: string, pds: string): {
           browser.windows.onRemoved.addListener(windowRemovedListener)
         }
 
+        let checking = false
         intervalId = setInterval(async () => {
+          if (checking) return
+          checking = true
           try {
             const session = await checkOAuthCallback()
             if (session) {
@@ -72,6 +75,8 @@ export function startOAuthFlow(handle: string, pds: string): {
           } catch (err) {
             cleanup()
             reject(err)
+          } finally {
+            checking = false
           }
         }, 500)
 

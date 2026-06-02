@@ -1,8 +1,23 @@
+export function CloseIcon({ size = 10 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="1.5" y1="1.5" x2="8.5" y2="8.5" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="8.5" y1="1.5" x2="1.5" y2="8.5" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+  )
+}
+
 export function PersonIcon({ size }: { size: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" fill="white" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="12" fill="#0070ff" />
+      <circle cx="12" cy="9.5" r="3.5" fill="white" />
+      <path
+        fill="white"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M 12.058 22.784 C 9.422 22.784 7.007 21.836 5.137 20.262 C 5.667 17.988 8.534 16.25 11.99 16.25 C 15.494 16.25 18.391 18.036 18.864 20.357 C 17.01 21.874 14.64 22.784 12.058 22.784 Z"
+      />
     </svg>
   )
 }

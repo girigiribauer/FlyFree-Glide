@@ -44,5 +44,6 @@ vi.stubGlobal('browser', {
   },
   runtime: {
     openOptionsPage: vi.fn(),
+    sendMessage: vi.fn().mockResolvedValue({}),
   },
 })

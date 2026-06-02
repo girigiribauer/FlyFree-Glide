@@ -9,7 +9,7 @@ import { getStoredDids } from '../../lib/accounts'
 import { setLang } from '../../lib/i18n'
 import { composeInitialText } from '../../lib/initialText'
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from '../../lib/settings'
-import { openXCompose, type XPending } from '../../lib/xpost'
+import type { XDraft } from '../../lib/xpost'
 import { createAccounts } from './createAccounts'
 
 type ModalState =
@@ -23,6 +23,7 @@ export default function App() {
   const [loading, setLoading] = createSignal(true)
   const [initialText, setInitialText] = createSignal('')
   const [settings, setSettings] = createSignal<Settings>(DEFAULT_SETTINGS)
+  const [pendingXDraft, setPendingXDraft] = createSignal<XDraft | null>(null)
 
   onMount(async () => {
     const [stored, dids] = await Promise.all([
@@ -52,9 +53,11 @@ export default function App() {
     if (!accounts.session()) setModal({ kind: 'auth', closeable: false })
   }
 
-  async function handlePost(url: string, xPending: XPending) {
-    await browser.storage.session.set({ xPending })
-    if (!settings().xHidden && settings().xAutoOpen) openXCompose()
+  function handlePost(url: string, xDraft: XDraft) {
+    setPendingXDraft(xDraft)
+    if (!settings().xHidden && settings().xAutoOpen) {
+      void browser.runtime.sendMessage({ type: 'openXCompose', xDraft, imageUrls: [] })
+    }
     if (settings().autoClose === 'immediate') {
       window.close()
     } else {
@@ -64,6 +67,11 @@ export default function App() {
 
   function handleOpenSettings() {
     void browser.runtime.openOptionsPage()
+  }
+
+  function handleOpenX() {
+    const draft = pendingXDraft()
+    if (draft) void browser.runtime.sendMessage({ type: 'openXCompose', xDraft: draft, imageUrls: [] })
   }
 
   const authModal = () => { const m = modal(); return m.kind === 'auth' ? m : undefined }
@@ -77,13 +85,13 @@ export default function App() {
             url={m().url}
             countdown={m().countdown}
             xEnabled={!settings().xHidden}
-            onOpenX={openXCompose}
+            onOpenX={handleOpenX}
             onClose={() => window.close()}
           />
         )}
       </Show>
       <Show when={!completeScreen()}>
-        <Show when={accounts.session() && accounts.currentUserInfo()}>
+        <Show when={accounts.session() && accounts.currentUserInfo() && !authModal()}>
           <ComposeScreen
             session={accounts.session()!}
             currentUser={accounts.currentUserInfo()!}

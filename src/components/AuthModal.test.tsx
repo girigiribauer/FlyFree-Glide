@@ -60,9 +60,9 @@ describe('AuthModal — ログインボタンの活性制御', () => {
 })
 
 describe('AuthModal — 表示制御', () => {
-  test('closeable=true のとき × ボタンが表示される', () => {
+  test('closeable=true のとき閉じるボタンが表示される', () => {
     renderModal(true)
-    expect(screen.getByText('×')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '閉じる' })).toBeInTheDocument()
   })
 
   test('closeable=false のとき × ボタンが表示されない', () => {

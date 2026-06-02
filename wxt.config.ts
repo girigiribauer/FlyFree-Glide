@@ -18,12 +18,19 @@ export default defineConfig({
     disabled: true,
   },
   manifest: {
-    name: 'FlyFree Glide',
-    description: 'Crosspost to X and Bluesky, with Glide.',
+    name: '__MSG_name__',
+    description: '__MSG_description__',
+    default_locale: 'en',
     icons: { 128: 'icons/icon.png' },
     action: {
-      default_title: 'FlyFree Glide',
+      default_title: '__MSG_default_title__',
       default_icon: { 128: 'icons/icon.png' },
+    },
+    browser_specific_settings: {
+      gecko: {
+        id: 'flyfree-glide@girigiribauer.github.io',
+        strict_min_version: '109.0',
+      },
     },
     permissions: ['storage', 'tabs'],
     host_permissions: [

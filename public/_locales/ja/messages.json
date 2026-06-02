@@ -1,0 +1,11 @@
+{
+  "name": {
+    "message": "FlyFree Glide"
+  },
+  "description": {
+    "message": "Crosspost to X and Bluesky, with Glide."
+  },
+  "default_title": {
+    "message": "FlyFree Glide"
+  }
+}

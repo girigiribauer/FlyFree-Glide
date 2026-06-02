@@ -42,7 +42,7 @@ export function createAccounts() {
       const newDids = [...new Set([...dids, callbackSession.did])]
       setStoredDids(newDids)
       setSession(callbackSession)
-      void refreshProfiles(callbackSession, newDids)
+      await refreshProfiles(callbackSession, newDids)
       return callbackSession
     }
     let restored: OAuthSession | null = null
@@ -56,7 +56,7 @@ export function createAccounts() {
     }
     if (restored) {
       setSession(restored)
-      void refreshProfiles(restored, storedDids())
+      await refreshProfiles(restored, storedDids())
     }
     return restored
   }
@@ -66,7 +66,7 @@ export function createAccounts() {
     const newDids = [...new Set([...storedDids(), s.did])]
     setStoredDids(newDids)
     setSession(s)
-    void refreshProfiles(s, newDids)
+    await refreshProfiles(s, newDids)
   }
 
   async function switchTo(did: string) {
@@ -83,7 +83,9 @@ export function createAccounts() {
   async function logout(): Promise<void> {
     const did = session()?.did
     if (!did) return
-    try { await getOAuthClient().revoke(did) } catch {}
+    try { await getOAuthClient().revoke(did) } catch {
+      try { await getOAuthClient().revoke(did) } catch {}
+    }
     await removeStoredDid(did)
     const remaining = storedDids().filter(d => d !== did)
     setStoredDids(remaining)

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'vitest'
 
-import { extractAuthorHandle, extractText, extractUrl, findPost, getMyHandle } from './bskyDom'
+import { extractAuthorHandle, extractImageUrls, extractText, extractUrl, findPost, getMyHandle } from './bskyDom'
 
 afterEach(() => { document.body.innerHTML = '' })
 
@@ -108,6 +108,60 @@ describe('extractText', () => {
     document.body.innerHTML = '<div></div>'
     const post = document.querySelector('div') as HTMLElement
     expect(extractText(post)).toBe('')
+  })
+})
+
+describe('extractImageUrls', () => {
+  test('feed_thumbnail URL を feed_fullsize に変換して返す', () => {
+    document.body.innerHTML = `
+      <div>
+        <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:abc/img1@jpeg" />
+      </div>
+    `
+    const post = document.querySelector('div') as HTMLElement
+    expect(extractImageUrls(post)).toEqual([
+      'https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:abc/img1@jpeg',
+    ])
+  })
+
+  test('feed_fullsize URL はそのまま返す', () => {
+    document.body.innerHTML = `
+      <div>
+        <img src="https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:abc/img1@jpeg" />
+      </div>
+    `
+    const post = document.querySelector('div') as HTMLElement
+    expect(extractImageUrls(post)).toEqual([
+      'https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:abc/img1@jpeg',
+    ])
+  })
+
+  test('thumbnail と fullsize が同じ画像の場合は重複を除去する', () => {
+    document.body.innerHTML = `
+      <div>
+        <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:abc/img1@jpeg" />
+        <img src="https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:abc/img1@jpeg" />
+      </div>
+    `
+    const post = document.querySelector('div') as HTMLElement
+    expect(extractImageUrls(post)).toHaveLength(1)
+  })
+
+  test('cdn.bsky.app 以外の img は無視する', () => {
+    document.body.innerHTML = `
+      <div>
+        <img src="https://example.com/avatar.jpg" />
+        <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:abc/img1@jpeg" />
+      </div>
+    `
+    const post = document.querySelector('div') as HTMLElement
+    expect(extractImageUrls(post)).toHaveLength(1)
+  })
+
+  test('画像がない場合は空配列', () => {
+    document.body.innerHTML = '<div></div>'
+    const post = document.querySelector('div') as HTMLElement
+    expect(extractImageUrls(post)).toEqual([])
   })
 })
 

@@ -111,7 +111,7 @@
   inset: 0;
   font-size: 20px;
   font-family: 'Noto Sans JP', sans-serif;
-  line-height: 1.6;
+  line-height: 1.4;
   color: #292E34;
   white-space: pre-wrap;
   word-break: break-word;
@@ -152,7 +152,7 @@
   font-family: 'Noto Sans JP', sans-serif;
   resize: none;
   background: transparent;
-  line-height: 1.6;
+  line-height: 1.4;
   overflow-y: scroll;
   scrollbar-width: thin;
   scrollbar-color: #BFCDD9 transparent;
@@ -179,10 +179,10 @@
   display: flex;
   gap: 8px;
   flex-wrap: nowrap;
-  height: 64px;
+  height: 73px;
   flex-shrink: 0;
-  overflow: hidden;
-  margin-top: 20px;
+  padding-top: 9px;
+  margin-top: 11px;
 }
 
 .imageTile {
