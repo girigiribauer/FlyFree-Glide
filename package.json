@@ -11,12 +11,15 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip --browser firefox",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src",
-    "test": "tsc --noEmit && eslint src && vitest run"
+    "lint": "eslint src tests",
+    "test": "tsc --noEmit && eslint src tests && vitest run",
+    "coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@atproto/api": "^0.19.19",
     "@atproto/oauth-client-browser": "^0.3.42",
+    "@emoji-mart/data": "^1.2.1",
+    "emoji-mart": "^5.6.0",
     "solid-js": "^1.9.0"
   },
   "devDependencies": {
@@ -24,6 +27,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/user-event": "^14.6.1",
     "@types/chrome": "^0.0.287",
+    "@vitest/coverage-v8": "^4.1.8",
     "eslint": "^10.4.0",
     "eslint-plugin-simple-import-sort": "^13.0.0",
     "jsdom": "^29.1.1",

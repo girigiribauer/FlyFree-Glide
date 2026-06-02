@@ -31,9 +31,14 @@ describe('countGraphemes', () => {
     expect(countGraphemes('Hello 👋 世界')).toBe(10)
   })
 
-  test('URL は文字数通りにカウントされる', () => {
-    const url = 'https://example.com/path'
-    expect(countGraphemes(url)).toBe(url.length)
+  test('https URL はホスト+パス形式（短縮形）でカウントされる', () => {
+    // 'https://example.com/path' → 'example.com/path' (16 chars)
+    expect(countGraphemes('https://example.com/path')).toBe(16)
+  })
+
+  test('ルートパス URL はホスト名のみでカウントされる', () => {
+    // 'https://www.yahoo.co.jp/' → 'www.yahoo.co.jp' (15 chars)
+    expect(countGraphemes('https://www.yahoo.co.jp/')).toBe(15)
   })
 })
 
@@ -96,5 +101,15 @@ describe('canPost', () => {
 
   test('制限超過でも画像があれば投稿できない', () => {
     expect(canPost('a'.repeat(MAX_GRAPHEMES + 1), 1)).toBe(false)
+  })
+
+  test('limitText が制限内なら本文が超過でも投稿できる（リンクカードURL除外後）', () => {
+    const overLimit = 'a'.repeat(MAX_GRAPHEMES + 1)
+    const withinLimit = 'a'.repeat(MAX_GRAPHEMES)
+    expect(canPost(overLimit, 0, withinLimit)).toBe(true)
+  })
+
+  test('limitText が超過なら投稿できない', () => {
+    expect(canPost('hello', 0, 'a'.repeat(MAX_GRAPHEMES + 1))).toBe(false)
   })
 })

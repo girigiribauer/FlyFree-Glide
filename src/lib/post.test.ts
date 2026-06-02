@@ -34,6 +34,9 @@ function mockAgent(postImpl = vi.fn().mockResolvedValue({ uri: TEST_URI })) {
         identity: {
           resolveHandle: vi.fn().mockResolvedValue({ data: { did: 'did:plc:test' } }),
         },
+        repo: {
+          createRecord: vi.fn().mockResolvedValue({ data: { uri: TEST_URI, cid: 'bafytest' } }),
+        },
       },
     },
   }
@@ -166,18 +169,142 @@ describe('postToBluesky', () => {
     expect(record.text).toBe('')
   })
 
-  test('リンクカード取得失敗時は URL がテキストに残る', async () => {
+  test('リンクカード取得失敗時は URL が短縮形でテキストに残る', async () => {
     vi.mocked(fetchLinkCard).mockResolvedValueOnce(null)
     const agent = mockAgent()
     await postToBluesky(agent, 'https://example.com を見てください')
     const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
-    expect(record.text).toContain('https://example.com')
+    expect(record.text).toContain('example.com')
   })
 
-  test('画像投稿時は URL がテキストに残る', async () => {
+  test('画像投稿時は URL が短縮形でテキストに残る', async () => {
     const agent = mockAgent()
     await postToBluesky(agent, 'https://example.com', [makeImage()])
     const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
-    expect(record.text).toBe('https://example.com')
+    expect(record.text).toBe('example.com')
+  })
+
+  test('linkCard: null のとき URL があってもリンクカード embed が付与されない', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'https://example.com', [], null)
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.embed).toBeUndefined()
+    expect(fetchLinkCard).not.toHaveBeenCalled()
+  })
+
+  test('linkCard: null のとき URL が短縮形でテキストに残る', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'https://example.com', [], null)
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.text).toBe('example.com')
+  })
+
+  test('linkCard に事前フェッチ済みカードを渡すと fetchLinkCard を呼ばずに embed が付与される', async () => {
+    const agent = mockAgent()
+    const card = { url: 'https://example.com', title: 'Pre-fetched', description: 'Desc', thumbUrl: null }
+    await postToBluesky(agent, 'https://example.com', [], card)
+    expect(fetchLinkCard).not.toHaveBeenCalled()
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.embed).toMatchObject({
+      $type: 'app.bsky.embed.external',
+      external: expect.objectContaining({ title: 'Pre-fetched' }),
+    })
+  })
+
+  test('langs オプションが投稿レコードに含まれる', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'hello', [], undefined, { langs: ['ja'] })
+    expect(agent.post).toHaveBeenCalledWith(expect.objectContaining({ langs: ['ja'] }))
+  })
+
+  test('langs が空配列のとき langs フィールドは付与されない', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'hello', [], undefined, { langs: [] })
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.langs).toBeUndefined()
+  })
+
+  test('threadgate: nobody のとき createRecord が呼ばれる', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'hello', [], undefined, {
+      threadgate: { type: 'nobody', allowMention: false, allowFollowing: false, allowFollower: false },
+    })
+    expect(agent.com.atproto.repo.createRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'app.bsky.feed.threadgate' })
+    )
+  })
+
+  test('threadgate: everybody のとき createRecord は呼ばれない', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'hello', [], undefined, {
+      threadgate: { type: 'everybody', allowMention: false, allowFollowing: false, allowFollower: false },
+    })
+    expect(agent.com.atproto.repo.createRecord).not.toHaveBeenCalled()
+  })
+
+  test('disableEmbeds: true のとき postgate createRecord が呼ばれる', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'hello', [], undefined, { disableEmbeds: true })
+    expect(agent.com.atproto.repo.createRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'app.bsky.feed.postgate' })
+    )
+  })
+
+  test('labels オプションが投稿レコードに含まれる', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'hello', [], undefined, { labels: ['sexual'] })
+    expect(agent.post).toHaveBeenCalledWith(
+      expect.objectContaining({
+        labels: { $type: 'com.atproto.label.defs#selfLabels', values: [{ val: 'sexual' }] },
+      })
+    )
+  })
+
+  test('labels: [] のとき labels フィールドは付与されない', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'hello', [], undefined, { labels: [] })
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.labels).toBeUndefined()
+  })
+
+  test('複数ラベルがすべて selfLabels に含まれる', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'hello', [], undefined, { labels: ['sexual', 'graphic-media'] })
+    expect(agent.post).toHaveBeenCalledWith(
+      expect.objectContaining({
+        labels: {
+          $type: 'com.atproto.label.defs#selfLabels',
+          values: expect.arrayContaining([{ val: 'sexual' }, { val: 'graphic-media' }]),
+        },
+      })
+    )
+  })
+
+  test('threadgate: custom の allow フラグが createRecord に反映される', async () => {
+    const agent = mockAgent()
+    await postToBluesky(agent, 'hello', [], undefined, {
+      threadgate: { type: 'custom', allowMention: true, allowFollowing: true, allowFollower: false },
+    })
+    const call = (agent.com.atproto.repo.createRecord as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(call.collection).toBe('app.bsky.feed.threadgate')
+    expect(call.record.allow).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ $type: 'app.bsky.feed.threadgate#mentionRule' }),
+        expect.objectContaining({ $type: 'app.bsky.feed.threadgate#followingRule' }),
+      ])
+    )
+    expect(call.record.allow).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ $type: 'app.bsky.feed.threadgate#followerRule' }),
+      ])
+    )
+  })
+
+  test('linkCard に事前フェッチ済みカードを渡すと URL がテキストから除去される', async () => {
+    const agent = mockAgent()
+    const card = { url: 'https://example.com', title: 'Pre-fetched', description: '', thumbUrl: null }
+    await postToBluesky(agent, 'Check this out https://example.com', [], card)
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(record.text).toBe('Check this out')
   })
 })

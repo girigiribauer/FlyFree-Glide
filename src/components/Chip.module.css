@@ -1,0 +1,78 @@
+.chip {
+  display: flex;
+  align-items: stretch;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 2px;
+  overflow: hidden;
+  height: 20px;
+}
+
+.chip:disabled {
+  cursor: default;
+}
+
+.chipIcon {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.chipValue {
+  padding: 1px 8px;
+  background: #EBF0F5;
+  color: #292E34;
+  font-size: 12px;
+  font-family: 'Noto Sans JP', sans-serif;
+  white-space: nowrap;
+  line-height: 18px;
+}
+
+.popupWrapper {
+  position: fixed;
+  z-index: 100;
+}
+
+.popup {
+  width: 150px;
+  background: #F3F6FA;
+  box-shadow: 2px 2px 4px 0px rgba(41, 46, 52, 0.5);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.popupHeader {
+  padding: 5px 10px 10px;
+  font-size: 10px;
+  color: #ACB8B3;
+  font-weight: bold;
+  font-family: 'Roboto', sans-serif;
+}
+
+.popupItem {
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px 10px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'Roboto', sans-serif;
+  color: #6A747E;
+}
+
+.popupItem:hover {
+  background: #EBF0F5;
+}
+
+.popupItemActive {
+  color: #0085FF;
+}
+
+.popupDivider {
+  border: none;
+  border-top: 1px solid #D9D9D9;
+  margin: 0;
+}

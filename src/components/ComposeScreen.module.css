@@ -1,0 +1,591 @@
+.screen {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Noto Sans JP', sans-serif;
+  position: relative;
+  background: #fff;
+}
+
+.popupBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
+/* ── Header ── */
+.header {
+  height: 60px;
+  background: #E9F4FF;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dryRunButton {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 18px;
+  border: 1px solid #ACB8B3;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: bold;
+  font-family: 'Noto Sans JP', sans-serif;
+  color: #6A747E;
+  background: transparent;
+}
+
+.dryRunButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.submitButton {
+  height: 36px;
+  min-width: 180px;
+  border-radius: 18px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  font-family: 'Noto Sans JP', sans-serif;
+  color: #fff;
+  background: #0085FF;
+  transition: background 0.15s;
+}
+
+.submitButton:disabled {
+  cursor: not-allowed;
+}
+
+.submitButtonDisabled {
+  background: #ACB8B3;
+}
+
+.submitButtonPosting {
+  background: #7ABFFF;
+}
+
+/* ── Body ── */
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 40px 40px 20px;
+  position: relative;
+}
+
+.dragging {
+  outline: 2px dashed #0085FF;
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(235, 240, 245, 0.25);
+  z-index: 10;
+  pointer-events: all;
+}
+
+.textareaWrapper {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.textareaMirror {
+  position: absolute;
+  inset: 0;
+  font-size: 20px;
+  font-family: 'Noto Sans JP', sans-serif;
+  line-height: 1.6;
+  color: #292E34;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: scroll;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  pointer-events: none;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.textareaMirror::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.facetTag {
+  color: var(--color-primary);
+}
+
+.facetLink {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.facetMention {
+  color: var(--color-primary);
+}
+
+.textarea {
+  position: absolute;
+  inset: 0;
+  border: none;
+  outline: none;
+  font-size: 20px;
+  color: transparent;
+  caret-color: #292E34;
+  font-family: 'Noto Sans JP', sans-serif;
+  resize: none;
+  background: transparent;
+  line-height: 1.6;
+  overflow-y: scroll;
+  scrollbar-width: thin;
+  scrollbar-color: #BFCDD9 transparent;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.textarea::-webkit-scrollbar {
+  width: 5px;
+}
+
+.textarea::-webkit-scrollbar-thumb {
+  background: #BFCDD9;
+  border-radius: 3px;
+}
+
+.textarea::placeholder {
+  color: #BFCDD9;
+}
+
+/* ── Images ── */
+.images {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  height: 64px;
+  flex-shrink: 0;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.imageTile {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.imageTileFrame {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  border: 1px solid #BFCDD9;
+  background: white;
+  overflow: hidden;
+  position: relative;
+}
+
+.imageTileImg {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  display: block;
+}
+
+.imageRemove {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #6C8077;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Link card ── */
+.linkCardOuter {
+  position: relative;
+  width: 400px;
+  margin-top: 20px;
+  flex-shrink: 0;
+}
+
+.linkCard {
+  display: flex;
+  align-items: center;
+  height: 64px;
+  border-radius: 8px;
+  border: 1px solid #BFCDD9;
+  overflow: hidden;
+  gap: 0;
+}
+
+.linkCardThumb {
+  width: 85px;
+  height: 48px;
+  object-fit: cover;
+  margin: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.linkCardText {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 8px 8px 0;
+}
+
+.linkCardTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #292E34;
+}
+
+.linkCardHost {
+  margin: 0;
+  font-size: 14px;
+  color: #292E34;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linkCardFetching {
+  padding: 0 12px;
+  font-size: 13px;
+  color: #6A747E;
+}
+
+.linkCardFailed {
+  padding: 0 12px;
+  font-size: 13px;
+  color: #6A747E;
+}
+
+.linkCardDismiss {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: #6C8077;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* ── Chips ── */
+.chipsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  position: relative;
+  margin-top: 20px;
+  height: 50px;
+  flex-shrink: 0;
+  align-content: flex-start;
+}
+
+/* X chip (toggle button, not a popup) */
+.chip {
+  display: flex;
+  align-items: stretch;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 2px;
+  overflow: hidden;
+  height: 20px;
+}
+
+.chipIcon {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.chipValue {
+  padding: 1px 8px;
+  background: #EBF0F5;
+  color: #292E34;
+  font-size: 12px;
+  font-family: 'Noto Sans JP', sans-serif;
+  white-space: nowrap;
+  line-height: 18px;
+}
+
+/* ── Footer ── */
+.footer {
+  height: 40px;
+  background: #E9F4FF;
+  border-top: 1px solid #6A747E;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.footerLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.footerRight {
+  margin-left: auto;
+  font-size: 12px;
+  color: #6A747E;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.footerIcons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footerRightGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.footerDetailBtn {
+  font-size: 12px;
+  color: #6A747E;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  white-space: nowrap;
+  font-family: 'Noto Sans JP', sans-serif;
+  text-decoration: underline;
+}
+
+.iconButton {
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.iconButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.emojiButtonWrapper {
+  position: relative;
+}
+
+.emojiPickerPopup {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 100;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 2px 2px 8px rgba(41, 46, 52, 0.3);
+}
+
+.counters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'Roboto Mono', monospace;
+  color: #ACB8B3;
+}
+
+.counterOverLimit {
+  color: #EC4765;
+}
+
+.counterWarning {
+  color: #F5A623;
+}
+
+.footerSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ACB8B3;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.footerMessage {
+  font-size: 12px;
+  color: #6A747E;
+}
+
+.footerErrorIcon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #EC4765;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.footerErrorMsg {
+  font-size: 12px;
+  color: #292E34;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footerErrorClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #6A747E;
+  padding: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ── Mention dropdown ── */
+.mentionDropdown {
+  position: fixed;
+  z-index: 200;
+  width: 280px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(41, 46, 52, 0.15);
+  overflow: hidden;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.mentionStatus {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #6A747E;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+.mentionItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+.mentionItemActive {
+  background: #EBF0F5;
+}
+
+.mentionAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  background: #B0BEC5;
+  flex-shrink: 0;
+  object-fit: cover;
+  display: block;
+}
+
+.mentionInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mentionName {
+  font-size: 14px;
+  font-weight: 700;
+  color: #292E34;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mentionHandle {
+  font-size: 12px;
+  color: #6A747E;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

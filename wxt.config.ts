@@ -6,6 +6,11 @@ export default defineConfig({
   vite: () => ({
     plugins: [solidPlugin()],
   }),
+  hooks: {
+    'build:manifestGenerated': (_, manifest) => {
+      if (manifest.options_ui) manifest.options_ui.open_in_tab = true
+    },
+  },
   dev: {
     server: { port: 1234 },
   },

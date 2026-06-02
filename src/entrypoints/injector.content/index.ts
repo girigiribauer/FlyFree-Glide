@@ -1,3 +1,4 @@
+import { X_SEL } from '../../lib/xDom'
 import type { XPending } from '../../lib/xpost'
 
 function waitForElement(selector: string, timeout = 5000): Promise<Element> {
@@ -33,7 +34,7 @@ function isLoginPage(): boolean {
 }
 
 async function injectText(text: string): Promise<void> {
-  const textarea = await waitForElement('[data-testid="tweetTextarea_0"]', 10000) as HTMLElement
+  const textarea = await waitForElement(X_SEL.tweetTextarea, 10000) as HTMLElement
   textarea.focus()
 
   const dt = new DataTransfer()
@@ -53,8 +54,8 @@ async function injectText(text: string): Promise<void> {
 }
 
 async function injectImages(images: XPending['images']): Promise<void> {
-  const input = await waitForElement('[data-testid="fileInput"]', 10000).catch(
-    () => waitForElement('input[type="file"]', 10000),
+  const input = await waitForElement(X_SEL.fileInput, 10000).catch(
+    () => waitForElement(X_SEL.fileInputFallback, 10000),
   ) as HTMLInputElement
 
   const files = images.map(({ data, mimeType, name }) => {

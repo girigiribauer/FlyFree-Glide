@@ -1,0 +1,19 @@
+:root {
+  --color-primary: #0085FF;
+  --color-bg: #E9F4FF;
+  --color-text: #495159;
+  --color-border: #ACB8B3;
+  --color-separator: #BFCDD9;
+  --color-close: #6C8077;
+  --color-white: #FFFFFF;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #E9F4FF;
+}

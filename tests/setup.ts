@@ -5,6 +5,8 @@ import { afterEach,vi } from 'vitest'
 
 afterEach(cleanup)
 
+vi.spyOn(window, 'close').mockImplementation(() => {})
+
 vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock')
 vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined)
 
@@ -15,6 +17,10 @@ vi.stubGlobal('browser', {
       set: vi.fn().mockResolvedValue(undefined),
       remove: vi.fn().mockResolvedValue(undefined),
     },
+    sync: {
+      get: vi.fn().mockResolvedValue({}),
+      set: vi.fn().mockResolvedValue(undefined),
+    },
   },
   tabs: {
     query: vi.fn().mockResolvedValue([]),
@@ -24,5 +30,12 @@ vi.stubGlobal('browser', {
     getCurrent: vi.fn().mockResolvedValue({ id: 1 }),
     create: vi.fn().mockResolvedValue({}),
     update: vi.fn().mockResolvedValue({}),
+    onRemoved: {
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+    },
+  },
+  runtime: {
+    openOptionsPage: vi.fn(),
   },
 })

@@ -29,3 +29,11 @@ export async function restoreSession(): Promise<OAuthSession | null> {
     return null
   }
 }
+
+export async function restoreSessionByDid(did: string): Promise<OAuthSession | null> {
+  try {
+    return await getOAuthClient().restore(did)
+  } catch {
+    return null
+  }
+}

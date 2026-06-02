@@ -2,6 +2,7 @@ node_modules/
 .output/
 .wxt/
 dist/
+coverage/
 *.local
 .env
 .env.*

@@ -1,0 +1,218 @@
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  color: #1a1a1a;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.section {
+  background: #fff;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 16px 8px;
+  margin: 0;
+}
+
+.sectionPrefix {
+  font-size: 10px;
+  color: #bbb;
+  font-weight: 400;
+  word-spacing: 6px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-top: 1px solid #f0f0f0;
+  gap: 16px;
+}
+
+.rowLabel {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.rowDescription {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.select {
+  font-size: 14px;
+  padding: 4px 8px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  background: #fafafa;
+  color: #1a1a1a;
+  min-width: 140px;
+}
+
+.links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.links li {
+  border-top: 1px solid #f0f0f0;
+}
+
+.links a {
+  display: block;
+  padding: 12px 16px;
+  color: #2961F5;
+  text-decoration: none;
+}
+
+.links a:hover {
+  background: #f5f5f5;
+}
+
+.optionCard {
+  border-top: 1px solid #f0f0f0;
+}
+
+.optionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #fafafa;
+}
+
+.optionSummary {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  padding: 3px 6px;
+}
+
+.optionBody {
+  padding: 8px 16px 10px 24px;
+}
+
+.optionField {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.optionFieldLabel {
+  width: 40px;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: #666;
+  padding-top: 5px;
+}
+
+.deleteButton {
+  font-size: 12px;
+  padding: 3px 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #fff;
+  color: #888;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.deleteButton:hover:not(:disabled) {
+  border-color: #f44336;
+  color: #f44336;
+  background: #fff5f5;
+}
+
+.deleteButton:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.addButton {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-top: 1px solid #f0f0f0;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+  color: #2961F5;
+  cursor: pointer;
+}
+
+.addButton:hover {
+  background: #f5f8ff;
+}
+
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.labelGroup {
+  padding: 4px 0;
+}
+
+.labelGroup + .labelGroup {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
+.labelGroupTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}

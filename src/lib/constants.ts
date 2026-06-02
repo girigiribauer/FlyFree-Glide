@@ -1,3 +1,6 @@
+// 投稿完了後の自動クローズカウントダウン秒数
+export const AUTOCLOSE_COUNTDOWN_SEC = 10
+
 // Bluesky の投稿制限
 export const MAX_GRAPHEMES = 300
 export const MAX_POST_IMAGES = 4
