@@ -1,14 +1,14 @@
 # Architecture Decision Records — FlyFree Glide
 
-コードを読めばわかることは書かない。なぜその実装を選んだか・他の手段がなぜ駄目だったか・何を変えると壊れるかを残す。
+Only the "why" goes here — not what the code does, but why this approach was chosen, what was tried and rejected, and what would break if changed.
 
 ---
 
-## X テキスト注入
+## X text injection
 
-### 採用: ClipboardEvent + Object.defineProperty
+### Adopted: ClipboardEvent + Object.defineProperty
 
-React は `paste` イベントの `event.clipboardData.getData('text/plain')` を読んで内部状態を更新する。これを通すことで投稿ボタンが活性化する。
+React reads `event.clipboardData.getData('text/plain')` from the `paste` event to update its internal state, which activates the post button.
 
 ```ts
 const event = new ClipboardEvent('paste', { clipboardData: dt, ... })
@@ -16,73 +16,91 @@ Object.defineProperty(event, 'clipboardData', { get: () => dt })
 textarea.dispatchEvent(event)
 ```
 
-`Object.defineProperty` が必要な理由: Firefox は ClipboardEvent コンストラクタの `clipboardData` オプションを無視する。コンストラクタで own property が作られないため、インスタンスに getter を定義することで両ブラウザ共通で動く。Chrome でも defineProperty は成功する（catch は実際には通らない）。
+`Object.defineProperty` is required because Firefox ignores the `clipboardData` option in the ClipboardEvent constructor — the property is never set as an own property, so defining a getter on the instance makes it work consistently across both browsers. Chrome also accepts `defineProperty` without issue (the catch branch never actually runs).
 
-### 不採用の手段
+### Rejected alternatives
 
-| 手段 | 理由 |
+| Approach | Reason |
 |---|---|
-| InputEvent（innerHTML 書き換え） | DOM は変わるが React 内部状態が更新されず、投稿ボタンが活性化しない |
-| execCommand('insertText') | 多行テキストで内容が重複するバグがある |
-| navigator.clipboard + execCommand('paste') | Content Script から execCommand('paste') は実行不可 |
-| ClipboardEvent のみ（defineProperty なし） | Firefox は clipboardData が空になるため React が空文字を読む |
+| InputEvent (innerHTML mutation) | DOM changes but React's internal state is not updated; post button stays disabled |
+| execCommand('insertText') | Duplicates content on multiline text |
+| navigator.clipboard + execCommand('paste') | execCommand('paste') cannot be called from a content script |
+| ClipboardEvent without defineProperty | Firefox gets an empty clipboardData, so React reads an empty string |
 
-### 壊れる条件
+### What would break this
 
-- X が React のペーストハンドラを変えた場合
-- `[data-testid="tweetTextarea_0"]` セレクタが変わった場合
+- X changes React's paste handler
+- The `[data-testid="tweetTextarea_0"]` selector changes
 
 ---
 
-## X 画像注入
+## X image injection
 
-### 採用: Object.defineProperty + change イベント
+### Adopted: Object.defineProperty + change event
 
-`input.files` は read-only のため直接代入できない。`Object.defineProperty` で上書きしてから `change` イベントを発火する。
+`input.files` is read-only and cannot be assigned directly. The workaround is to override it with `Object.defineProperty` and then dispatch a `change` event.
 
 ```ts
 Object.defineProperty(input, 'files', { value: dt.files, writable: true, configurable: true })
 input.dispatchEvent(new Event('change', { bubbles: true }))
 ```
 
-### 不採用の手段
+### Rejected alternatives
 
-| 手段 | 理由 |
+| Approach | Reason |
 |---|---|
-| DragEvent（D&D） | Firefox では x.com の React ハンドラが drop を処理しない |
-| ClipboardEvent paste（画像） | 未検証。テキストと同様に Firefox で clipboardData が空になる問題が起きると予想される |
+| DragEvent (drag and drop) | Firefox's React handler on x.com does not process drop events |
+| ClipboardEvent paste (image) | Untested, but expected to hit the same empty clipboardData issue as text on Firefox |
 
-### 壊れる条件
+### What would break this
 
-- `[data-testid="fileInput"]` / `input[type="file"]` セレクタが変わった場合
-
----
-
-## 注入の順序とエラー分離
-
-### テキスト → 画像の順
-
-テキスト注入（ClipboardEvent）が compose エリアをフォーカスする。これを先にやらないと、`x.com/home` で file input が DOM に現れず画像注入がタイムアウトする。`/compose/post` では順序依存は薄いが、現在はこの順序を維持している。
-
-### try-catch を分離している理由
-
-テキストと画像を同一 try-catch に入れると、テキスト失敗時に画像注入もスキップされる。独立して失敗・成功できるように別々にしている。
+- The `[data-testid="fileInput"]` / `input[type="file"]` selector changes
 
 ---
 
-## content script の world 分割
+## Injection order and error isolation
 
-| スクリプト | world | 理由 |
+### Text before image
+
+Text injection (ClipboardEvent) focuses the compose area. Without this step, the file input does not appear in the DOM on `x.com/home`, causing image injection to time out. On `/compose/post` the order matters less, but the current order is preserved for consistency.
+
+### Separate try-catch blocks
+
+Wrapping both injections in a single try-catch would cause image injection to be skipped whenever text injection fails. Keeping them independent lets each succeed or fail on its own.
+
+---
+
+## Content script world split
+
+| Script | World | Reason |
 |---|---|---|
-| content/index.ts | isolated | `browser.runtime.sendMessage` は isolated world でしか使えない |
-| injector.content/index.ts | MAIN | ClipboardEvent を React のハンドラに届けるには MAIN world が必要 |
+| content/index.ts | isolated | `browser.runtime.sendMessage` is only available in the isolated world |
+| injector.content/index.ts | MAIN | ClipboardEvent must be dispatched from the MAIN world to reach React's handlers |
 
-isolated → MAIN へのデータ渡しは `window.postMessage` 経由。
+Data flows from isolated → MAIN via `window.postMessage`.
 
 ---
 
 ## Firefox MV3
 
-Firefox MV2 では `browser.action`（ツールバーボタン）が存在しない（MV2 は `browserAction`）。WXT の polyfill も MV2 では機能しない。Firefox は MV3 を 109 以降でサポートしているため、MV3 でビルドすることで解決した。
+Firefox MV2 does not have `browser.action` (the toolbar button API) — MV2 uses `browserAction`, which WXT's polyfill does not cover. Firefox has supported MV3 since version 109, so building with MV3 resolves this.
 
-`dev:firefox` / `build:firefox` どちらも `--mv3` フラグが必要。片方だけ付け忘れると Firefox で拡張が起動しない。
+Both `dev:firefox` and `build:firefox` require the `--mv3` flag. Omitting it from either command causes the extension to fail to start on Firefox.
+
+---
+
+## hooks/ vs lib/
+
+| Directory | What goes there |
+|---|---|
+| `src/hooks/` | Anything that uses SolidJS primitives (`createSignal`, `createEffect`, etc.) |
+| `src/lib/` | Pure functions and type definitions with no dependency on SolidJS or the DOM |
+
+### Decision rule
+
+If the function can be called outside a SolidJS reactive root (e.g. in a plain unit test without `createRoot`), it belongs in `lib/`. If it cannot, it belongs in `hooks/`.
+
+### What breaks if ignored
+
+- Putting pure functions in `hooks/` makes it unclear whether a reactive root is needed, complicating test setup
+- Putting signals in `lib/` triggers "owner not found" warnings when called outside a component
