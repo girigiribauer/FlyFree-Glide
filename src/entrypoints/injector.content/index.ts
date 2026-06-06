@@ -1,5 +1,6 @@
 import { X_SEL } from '../../lib/xDom'
 import type { XDraft } from '../../lib/xpost'
+import { startRecordingSession } from './recording'
 
 function waitForElement(selector: string, timeout = 5000): Promise<Element> {
   return new Promise((resolve, reject) => {
@@ -84,18 +85,26 @@ export default defineContentScript({
         return
       }
 
+      const session = await startRecordingSession(showBanner)
+
       let textFailed = false
       try {
         await injectText(draft.text)
       } catch {
         textFailed = true
       }
+
+      session?.checkpoint()
+
       let imagesFailed = false
       try {
         if (draft.images.length > 0) await injectImages(draft.images)
       } catch {
         imagesFailed = true
       }
+
+      await session?.finish()
+
       if (textFailed || imagesFailed) {
         showBanner('X への自動入力に失敗しました。テキスト・画像を手動で入力してください。')
       }

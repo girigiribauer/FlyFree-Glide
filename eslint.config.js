@@ -2,7 +2,7 @@ import tseslint from 'typescript-eslint'
 import simpleImportSort from 'eslint-plugin-simple-import-sort'
 
 export default tseslint.config(
-  { ignores: ['.wxt/', '.output/', 'node_modules/'] },
+  { ignores: ['.wxt/', '.output/', 'node_modules/', 'tests/e2e/'] },
   tseslint.configs.recommended,
   {
     plugins: { 'simple-import-sort': simpleImportSort },

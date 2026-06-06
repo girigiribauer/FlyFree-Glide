@@ -55,7 +55,7 @@ export default function App() {
 
   function handlePost(url: string, xDraft: XDraft) {
     setPendingXDraft(xDraft)
-    if (!settings().xHidden && settings().xAutoOpen) {
+    if ((!settings().xHidden && settings().xAutoOpen) || import.meta.env.VITE_FIXTURE_UPDATE === '1') {
       void browser.runtime.sendMessage({ type: 'openXCompose', xDraft, imageUrls: [] })
     }
     if (settings().autoClose === 'immediate') {

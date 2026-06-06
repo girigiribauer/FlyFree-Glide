@@ -7,3 +7,6 @@ coverage/
 .env
 .env.*
 !.env.example
+tests/e2e/.userdata/
+tests/e2e/.auth/
+test-results/

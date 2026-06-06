@@ -4,5 +4,6 @@
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
     "types": ["chrome"]
-  }
+  },
+  "exclude": [".output", "tests/e2e"]
 }

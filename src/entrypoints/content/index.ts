@@ -18,6 +18,18 @@ function waitForInjector(): Promise<void> {
 export default defineContentScript({
   matches: ['https://x.com/*', 'https://twitter.com/*'],
   async main() {
+    if (import.meta.env.VITE_FIXTURE_UPDATE === '1') {
+      window.addEventListener('message', async (e: MessageEvent) => {
+        if (e.data?.type !== 'flyfree:save-recording') return
+        try {
+          const result = await browser.runtime.sendMessage({ type: 'flyfree:save-recording', data: e.data.data })
+          window.postMessage({ type: 'flyfree:recording-result', ok: result?.ok ?? false }, '*')
+        } catch {
+          window.postMessage({ type: 'flyfree:recording-result', ok: false }, '*')
+        }
+      })
+    }
+
     const response = await browser.runtime.sendMessage({ type: 'getXDraft' })
     const draft = response?.draft
     if (!draft) return

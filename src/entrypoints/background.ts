@@ -6,6 +6,19 @@ const POPUP_HEIGHT = 480
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener(handleMessage)
 
+  if (import.meta.env.VITE_FIXTURE_UPDATE === '1') {
+    browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+      const msg = message as { type?: string; data?: object }
+      if (msg.type !== 'flyfree:save-recording') return false
+      void fetch('http://localhost:7331/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(msg.data ?? {}),
+      }).then(r => sendResponse({ ok: r.ok })).catch(() => sendResponse({ ok: false }))
+      return true
+    })
+  }
+
   browser.action.onClicked.addListener(async (tab) => {
     if (tab.url || tab.title) {
       await browser.storage.session.set({ pendingPage: { url: tab.url, title: tab.title } })

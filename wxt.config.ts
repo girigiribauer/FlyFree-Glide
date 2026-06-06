@@ -7,8 +7,14 @@ export default defineConfig({
     plugins: [solidPlugin()],
   }),
   hooks: {
-    'build:manifestGenerated': (_, manifest) => {
+    'build:manifestGenerated': (wxt, manifest) => {
       if (manifest.options_ui) manifest.options_ui.open_in_tab = true
+      if (process.env.VITE_FIXTURE_UPDATE === '1') {
+        manifest.name = 'FlyFree Glide [FXT]'
+        const hp = (manifest.host_permissions as string[] | undefined) ?? []
+        manifest.host_permissions = [...hp, 'http://localhost:7331/*']
+      }
+      else if (wxt.config.command === 'serve') manifest.name = 'FlyFree Glide [DEV]'
     },
   },
   dev: {
