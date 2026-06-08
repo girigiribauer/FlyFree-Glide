@@ -35,7 +35,7 @@ function isLoginPage(): boolean {
 }
 
 async function injectText(text: string): Promise<void> {
-  const textarea = await waitForElement(X_SEL.tweetTextarea, 10000) as HTMLElement
+  const textarea = await waitForElement(`${X_SEL.modal} ${X_SEL.tweetTextarea}`, 10000) as HTMLElement
   textarea.focus()
 
   const dt = new DataTransfer()
@@ -55,8 +55,8 @@ async function injectText(text: string): Promise<void> {
 }
 
 async function injectImages(images: XDraft['images']): Promise<void> {
-  const input = await waitForElement(X_SEL.fileInput, 10000).catch(
-    () => waitForElement(X_SEL.fileInputFallback, 10000),
+  const input = await waitForElement(`${X_SEL.modal} ${X_SEL.fileInput}`, 10000).catch(
+    () => waitForElement(`${X_SEL.modal} ${X_SEL.fileInputFallback}`, 10000),
   ) as HTMLInputElement
 
   const files = images.map(({ data, mimeType, name }) => {

@@ -63,7 +63,7 @@ export function makeDefaultLabelOption(): LabelOption {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  autoClose: 'immediate',
+  autoClose: 'manual',
   startBlank: false,
   xHidden: false,
   xAutoOpen: true,

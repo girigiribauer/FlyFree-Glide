@@ -89,6 +89,34 @@ Both `dev:firefox` and `build:firefox` require the `--mv3` flag. Omitting it fro
 
 ---
 
+## E2E testing and fixture update mode
+
+### Problem
+
+E2E tests that hit real x.com require an X account, are slow, flaky, and cannot run in CI without credentials. At the same time, x.com's DOM structure (DraftJS, React portals) is complex enough that mocking it by hand would diverge from reality quickly.
+
+### Adopted: recorded fixture + Playwright
+
+The approach splits into two phases:
+
+**Phase 1 — fixture update** (`npm run test:e2e:update-fixture`)
+
+Run once manually when x.com's DOM changes. Starts a local recording server (port 7331) and a WXT dev build with `VITE_FIXTURE_UPDATE=1`. The developer performs a Dry Run via the extension on real x.com; the extension captures the DOM before/after text injection and after image injection, then POSTs it to the recording server, which generates `tests/e2e/fixtures/x-composer.html`.
+
+**Phase 2 — E2E tests** (`npm run test:e2e`)
+
+Playwright loads the static fixture HTML (no x.com, no account needed) and drives the built extension against it. Runs in CI on ubuntu and windows.
+
+### Why VITE_FIXTURE_UPDATE, not VITE_RECORD_MODE
+
+`RECORD_MODE` sounds like surveillance software and would raise concerns during browser store review. `FIXTURE_UPDATE` describes intent (updating test fixtures) without that connotation. The env var is a compile-time flag; dead code elimination removes all recording code from production builds.
+
+### Limitations
+
+The fixture reflects the DOM at the time it was recorded. If x.com changes its DOM structure, the fixture must be re-recorded with `npm run test:e2e:update-fixture`. The E2E tests verify that the injection logic works against the recorded structure — they do not guarantee the live x.com DOM still matches.
+
+---
+
 ## hooks/ vs lib/
 
 | Directory | What goes there |

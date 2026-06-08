@@ -7,7 +7,7 @@ function isRecording(): boolean {
 }
 
 function findContainer(): Element | null {
-  const textarea = document.querySelector(X_SEL.tweetTextarea)
+  const textarea = document.querySelector(`${X_SEL.modal} ${X_SEL.tweetTextarea}`)
   if (!textarea) return null
   let el: Element = textarea
   while (el.parentElement && el.parentElement !== document.body) {
@@ -64,11 +64,11 @@ function startObserver(container: Element): { stop: () => MutationEntry[] } {
 }
 
 function waitForTextarea(timeout = 10000): Promise<Element | null> {
-  const existing = document.querySelector(X_SEL.tweetTextarea)
+  const existing = document.querySelector(`${X_SEL.modal} ${X_SEL.tweetTextarea}`)
   if (existing) return Promise.resolve(existing)
   return new Promise(resolve => {
     const obs = new MutationObserver(() => {
-      const el = document.querySelector(X_SEL.tweetTextarea)
+      const el = document.querySelector(`${X_SEL.modal} ${X_SEL.tweetTextarea}`)
       if (el) { obs.disconnect(); clearTimeout(timer); resolve(el) }
     })
     obs.observe(document.body, { childList: true, subtree: true })
