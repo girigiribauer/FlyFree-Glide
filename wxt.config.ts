@@ -10,10 +10,9 @@ export default defineConfig({
     'build:manifestGenerated': (wxt, manifest) => {
       if (manifest.options_ui) manifest.options_ui.open_in_tab = true
       if (wxt.config.browser === 'firefox') {
-        ;(manifest as Record<string, unknown>).data_collection_permissions = {
-          required: [],
-          optional: [],
-        }
+        const bss = manifest.browser_specific_settings as Record<string, unknown>
+        const gecko = bss?.gecko as Record<string, unknown>
+        if (gecko) gecko.data_collection_permissions = { required: ['none'], optional: [] }
       }
       if (process.env.VITE_FIXTURE_UPDATE === '1') {
         manifest.name = 'FlyFree Glide [FXT]'
