@@ -43,7 +43,7 @@ export default defineConfig({
     browser_specific_settings: {
       gecko: {
         id: 'flyfree-glide@girigiribauer.github.io',
-        strict_min_version: '109.0',
+        strict_min_version: '140.0',
       },
     },
     permissions: ['storage', 'tabs'],

@@ -99,14 +99,13 @@ export default function ComposeScreen(props: Props) {
   function calculateMentionPos() {
     if (!textareaRef || !mirrorRef) return
     const cursor = textareaRef.selectionStart
-    const before = text().slice(0, cursor)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-    const savedHtml = mirrorRef.innerHTML
-    mirrorRef.innerHTML = before + '<span id="__cm__" style="display:inline-block;width:0;height:1em"></span>'
-    const marker = mirrorRef.querySelector('#__cm__')
-    const markerRect = marker?.getBoundingClientRect()
-    mirrorRef.innerHTML = savedHtml
+    const savedChildren = Array.from(mirrorRef.childNodes).map(n => n.cloneNode(true))
+    const marker = document.createElement('span')
+    marker.style.cssText = 'display:inline-block;width:0;height:1em'
+    mirrorRef.replaceChildren(document.createTextNode(text().slice(0, cursor)), marker)
+    const markerRect = marker.getBoundingClientRect()
+    mirrorRef.replaceChildren(...savedChildren)
     if (!markerRect) return
 
     const lineHeight = parseFloat(getComputedStyle(mirrorRef).lineHeight) || 28
