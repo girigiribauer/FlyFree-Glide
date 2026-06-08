@@ -550,7 +550,7 @@ describe('ComposeScreen — X チップ', () => {
     expect(screen.queryByText(/チラ見せモード/)).not.toBeInTheDocument()
   })
 
-  test('xHidden=false かつ xCliffhanger=false のとき「チラ見せモードOFF」を表示', () => {
+  test('xHidden=false かつ xCliffhanger=false のときチップを非表示', () => {
     render(() => (
       <ComposeScreen
         session={mockSession}
@@ -566,7 +566,8 @@ describe('ComposeScreen — X チップ', () => {
         onLogout={vi.fn()}
       />
     ))
-    expect(screen.getByText('チラ見せモードOFF')).toBeInTheDocument()
+    expect(screen.queryByText('チラ見せモードON')).not.toBeInTheDocument()
+    expect(screen.queryByText('チラ見せモードOFF')).not.toBeInTheDocument()
   })
 
   test('xHidden=false かつ xCliffhanger=true のとき「チラ見せモードON」を表示', () => {
@@ -596,7 +597,7 @@ describe('ComposeScreen — X チップ', () => {
         currentUser={mockCurrentUser}
         initialText=""
         accounts={[]}
-        settings={makeSettings({ xHidden: false, xCliffhanger: false })}
+        settings={makeSettings({ xHidden: false, xCliffhanger: true })}
         onSettingsChange={onSettingsChange}
         onOpenSettings={vi.fn()}
         onPost={vi.fn()}
@@ -605,8 +606,8 @@ describe('ComposeScreen — X チップ', () => {
         onLogout={vi.fn()}
       />
     ))
-    fireEvent.click(screen.getByText('チラ見せモードOFF'))
-    expect(onSettingsChange).toHaveBeenCalledWith({ xCliffhanger: true })
+    fireEvent.click(screen.getByText('チラ見せモードON'))
+    expect(onSettingsChange).toHaveBeenCalledWith({ xCliffhanger: false })
   })
 })
 

@@ -115,8 +115,12 @@ export default defineContentScript({
 
       await session?.finish()
 
-      if (textFailed || imagesFailed) {
-        showBanner('X への自動入力に失敗しました。テキスト・画像を手動で入力してください。')
+      if (textFailed && imagesFailed) {
+        showBanner('X へのテキスト・画像の自動入力に失敗しました。手動で入力してください。')
+      } else if (textFailed) {
+        showBanner('X へのテキストの自動入力に失敗しました。手動で入力してください。')
+      } else if (imagesFailed) {
+        showBanner('X への画像の自動入力に失敗しました。手動でアップロードしてください。')
       }
     })
     document.documentElement.setAttribute('data-flyfree-ready', '1')

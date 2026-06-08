@@ -183,7 +183,7 @@ export default function OptionsApp() {
               {t('xCliffhangerLabel')}
               <div class={styles.rowDescription}>{t('xCliffhangerDesc')}</div>
             </div>
-            <Toggle checked={settings().xCliffhanger} onChange={v => update('xCliffhanger', v)} />
+            <Toggle checked={settings().xCliffhanger} onChange={v => update('xCliffhanger', v)} aria-label={t('xCliffhangerLabel')} />
           </div>
         </Show>
       </section>

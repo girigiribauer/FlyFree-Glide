@@ -109,7 +109,7 @@ export default function ComposeScreen(props: Props) {
     mirrorRef.innerHTML = savedHtml
     if (!markerRect) return
 
-    const lineHeight = 20 * 1.6
+    const lineHeight = parseFloat(getComputedStyle(mirrorRef).lineHeight) || 28
     const cursorTop = markerRect.top
     const cursorBottom = cursorTop + lineHeight
     const dropdownH = 220
@@ -501,10 +501,10 @@ export default function ComposeScreen(props: Props) {
               onSettings={() => { setOpenPopup(null); props.onOpenSettings() }}
             />
           </Show>
-          <Show when={!props.settings.xHidden}>
-            <button class={styles.chip} type="button" onClick={() => props.onSettingsChange({ xCliffhanger: !props.settings.xCliffhanger })}>
+          <Show when={!props.settings.xHidden && props.settings.xCliffhanger}>
+            <button class={styles.chip} type="button" onClick={() => props.onSettingsChange({ xCliffhanger: false })}>
               <span class={styles.chipIcon}><ChipXIcon /></span>
-              <span class={styles.chipValue}>{props.settings.xCliffhanger ? t('cliffhangerOn') : t('cliffhangerOff')}</span>
+              <span class={styles.chipValue}>{t('cliffhangerOn')}</span>
             </button>
           </Show>
         </div>

@@ -1,4 +1,4 @@
-import { RichText } from '@atproto/api'
+import { type AtpBaseClient, RichText } from '@atproto/api'
 
 import { MAX_LINK_THUMB_SIZE } from './constants'
 import { type OptimizedImage, optimizeImage } from './image'
@@ -135,8 +135,7 @@ export async function postToBluesky(
       : trimmed
 
   const rt = new RichText({ text: buildShortLinkText(finalText) })
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await rt.detectFacets(agent as any)
+  await rt.detectFacets(agent as unknown as AtpBaseClient)
 
   const langs = options?.langs?.length ? options.langs : undefined
   const labelValues = options?.labels?.length

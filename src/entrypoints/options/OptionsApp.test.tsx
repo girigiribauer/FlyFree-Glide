@@ -129,6 +129,45 @@ describe('OptionsApp — X に蓋をする', () => {
   })
 })
 
+describe('OptionsApp — チラ見せモード', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.stubGlobal('navigator', { language: 'ja' })
+  })
+
+  test('xCliffhanger が false のときトグルがオフ', async () => {
+    mockSettings({ xCliffhanger: false })
+    render(() => <OptionsApp />)
+    await vi.waitFor(() => expect(screen.getByText('チラ見せモード')).toBeInTheDocument())
+    expect(screen.getByRole('checkbox', { name: 'チラ見せモード' })).not.toBeChecked()
+  })
+
+  test('xCliffhanger が true のときトグルがオン', async () => {
+    mockSettings({ xCliffhanger: true })
+    render(() => <OptionsApp />)
+    await vi.waitFor(() => expect(screen.getByRole('checkbox', { name: 'チラ見せモード' })).toBeChecked())
+  })
+
+  test('トグルをオンにすると xCliffhanger: true が保存される', async () => {
+    mockSettings({ xCliffhanger: false })
+    render(() => <OptionsApp />)
+    await vi.waitFor(() => expect(screen.getByText('チラ見せモード')).toBeInTheDocument())
+    fireEvent.change(screen.getByRole('checkbox', { name: 'チラ見せモード' }), { target: { checked: true } })
+    await vi.waitFor(() =>
+      expect(browser.storage.sync.set).toHaveBeenCalledWith({
+        settings: expect.objectContaining({ xCliffhanger: true }),
+      })
+    )
+  })
+
+  test('xHidden が true のときチラ見せモードのトグルが非表示', async () => {
+    mockSettings({ xHidden: true })
+    render(() => <OptionsApp />)
+    await vi.waitFor(() => expect(screen.getByRole('checkbox', { name: 'X に蓋をする' })).toBeInTheDocument())
+    expect(screen.queryByText('チラ見せモード')).not.toBeInTheDocument()
+  })
+})
+
 describe('OptionsApp — startBlank', () => {
   beforeEach(() => {
     vi.clearAllMocks()

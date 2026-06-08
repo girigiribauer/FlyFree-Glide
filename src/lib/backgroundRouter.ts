@@ -3,12 +3,16 @@ import type { XDraft } from './xpost'
 
 type Sender = { tab?: { id?: number } }
 
+type IncomingMessage =
+  | { type: 'getXDraft' }
+  | { type: 'openXCompose'; xDraft: XDraft; imageUrls?: string[] }
+
 export function handleMessage(
   message: unknown,
   sender: Sender,
   sendResponse: (r: unknown) => void,
 ): boolean | undefined {
-  const msg = message as Record<string, unknown>
+  const msg = message as IncomingMessage
 
   if (msg.type === 'getXDraft') {
     void handleGetXDraft(sender.tab?.id, sendResponse as (r: { draft: XDraft | null }) => void)
@@ -16,12 +20,11 @@ export function handleMessage(
   }
 
   if (msg.type === 'openXCompose') {
-    const xDraft = msg.xDraft as XDraft | undefined
-    if (!xDraft) {
+    if (!msg.xDraft) {
       ;(sendResponse as (r: { ok: boolean }) => void)({ ok: false })
       return true
     }
-    void handleOpenXCompose(xDraft, (msg.imageUrls as string[]) ?? [], sendResponse as (r: { ok: boolean }) => void)
+    void handleOpenXCompose(msg.xDraft, msg.imageUrls ?? [], sendResponse as (r: { ok: boolean }) => void)
     return true
   }
 }
