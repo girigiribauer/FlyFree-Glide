@@ -9,6 +9,12 @@ export default defineConfig({
   hooks: {
     'build:manifestGenerated': (wxt, manifest) => {
       if (manifest.options_ui) manifest.options_ui.open_in_tab = true
+      if (wxt.config.browser === 'firefox') {
+        ;(manifest as Record<string, unknown>).data_collection_permissions = {
+          required: [],
+          optional: [],
+        }
+      }
       if (process.env.VITE_FIXTURE_UPDATE === '1') {
         manifest.name = 'FlyFree Glide [FXT]'
         const hp = (manifest.host_permissions as string[] | undefined) ?? []
@@ -19,6 +25,9 @@ export default defineConfig({
   },
   dev: {
     server: { port: 1234 },
+  },
+  suppressWarnings: {
+    firefoxDataCollection: true,
   },
   runner: {
     disabled: true,

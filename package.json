@@ -11,7 +11,7 @@
     "build": "wxt build",
     "build:firefox": "wxt build --browser firefox --mv3",
     "zip": "wxt zip",
-    "zip:firefox": "wxt zip --browser firefox",
+    "zip:firefox": "wxt zip --browser firefox --mv3",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests",
     "test": "tsc --noEmit && eslint src tests && vitest run",
