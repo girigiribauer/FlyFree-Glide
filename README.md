@@ -6,7 +6,7 @@ A browser extension for posting to Bluesky while simultaneously crossposting to 
 
 - Post to Bluesky with OAuth authentication
 - Crosspost to X (opens the X compose window automatically)
-- Teaser mode: post only the first half of your text to X with a Bluesky link, drawing readers to the full post
+- Cliffhanger mode: post only the first half of your text to X with a Bluesky link, drawing readers to the full post
 - Link card, image upload, mention autocomplete, and emoji picker support
 - Multi-account switching
 

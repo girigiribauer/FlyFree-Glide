@@ -4,10 +4,10 @@ export const X_COMPOSE_URL = 'https://x.com/compose/post'
 export const X_POPUP_WIDTH = 600
 export const X_POPUP_HEIGHT = 400
 
-const MIN_TEASER_GRAPHEMES = 50
+const MIN_CLIFFHANGER_GRAPHEMES = 50
 const X_CHAR_LIMIT = 280
 const X_URL_WEIGHT = 23  // t.co wraps all URLs to exactly 23 chars
-const TEASER_ELLIPSIS = '... '
+const CLIFFHANGER_ELLIPSIS = '... '
 
 function xWeightOf(char: string): number {
   const cp = char.codePointAt(0) ?? 0
@@ -49,13 +49,13 @@ export function countXChars(text: string): number {
   return count
 }
 
-export function composeTeaserText(text: string, blueskyUrl: string): string {
+export function composeCliffhangerText(text: string, blueskyUrl: string): string {
   const segmenter = new Intl.Segmenter()
   const graphemes = [...segmenter.segment(text)].map(s => s.segment)
-  if (graphemes.length < MIN_TEASER_GRAPHEMES) return text + '\n' + blueskyUrl
+  if (graphemes.length < MIN_CLIFFHANGER_GRAPHEMES) return text + '\n' + blueskyUrl
 
   const halfPoint = Math.floor(graphemes.length / 2)
-  const maxXChars = X_CHAR_LIMIT - TEASER_ELLIPSIS.length - X_URL_WEIGHT
+  const maxXChars = X_CHAR_LIMIT - CLIFFHANGER_ELLIPSIS.length - X_URL_WEIGHT
 
   const rt = new RichText({ text })
   rt.detectFacetsWithoutResolution()
@@ -88,7 +88,7 @@ export function composeTeaserText(text: string, blueskyUrl: string): string {
     }
   }
 
-  return graphemes.slice(0, cutAt).join('') + TEASER_ELLIPSIS + blueskyUrl
+  return graphemes.slice(0, cutAt).join('') + CLIFFHANGER_ELLIPSIS + blueskyUrl
 }
 
 export interface XDraftImage {

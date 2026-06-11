@@ -19,7 +19,7 @@ import { postToBluesky } from '../lib/post'
 import { buildMirrorHtml } from '../lib/richtext'
 import { formatLabelOption, formatLangOption, formatReactionOption, type Settings } from '../lib/settings'
 import { removeLinkCardUrl } from '../lib/urlHelpers'
-import { composeTeaserText, countXChars, uint8ToBase64, type XDraft } from '../lib/xpost'
+import { composeCliffhangerText, countXChars, uint8ToBase64, type XDraft } from '../lib/xpost'
 import Chip from './Chip'
 import styles from './ComposeScreen.module.css'
 import { BlueskyIcon, ChipLabelIcon, ChipLangIcon, ChipReactionIcon, ChipXIcon, CloseIcon, EmojiIcon, ImageIcon, XIcon } from './Icons'
@@ -279,7 +279,7 @@ export default function ComposeScreen(props: Props) {
       const fakeBskyUrl = 'https://bsky.app'
       const rawText = text().trim()
       const xDraft: XDraft = {
-        text: props.settings.xCliffhanger ? composeTeaserText(rawText, fakeBskyUrl) : rawText,
+        text: props.settings.xCliffhanger ? composeCliffhangerText(rawText, fakeBskyUrl) : rawText,
         images: optimizedImages.map((img, i) => ({
           data: uint8ToBase64(img.data),
           mimeType: img.mimeType,
@@ -318,7 +318,7 @@ export default function ComposeScreen(props: Props) {
       })
       const rawText = text().trim()
       const xDraft: XDraft = {
-        text: props.settings.xCliffhanger ? composeTeaserText(rawText, url) : rawText,
+        text: props.settings.xCliffhanger ? composeCliffhangerText(rawText, url) : rawText,
         images: optimizedImages.map((img, i) => ({
           data: uint8ToBase64(img.data),
           mimeType: img.mimeType,

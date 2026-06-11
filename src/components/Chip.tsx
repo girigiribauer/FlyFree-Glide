@@ -1,6 +1,7 @@
 import type { JSX } from 'solid-js'
 import { createSignal, For, Show } from 'solid-js'
 
+import { t } from '../lib/i18n'
 import styles from './Chip.module.css'
 
 const POPUP_WIDTH = 150
@@ -72,7 +73,7 @@ export default function Chip(props: Props) {
             <Show when={props.onSettings}>
               <hr class={styles.popupDivider} />
               <button class={styles.popupItem} type="button" onClick={props.onSettings}>
-                詳細設定
+                {t('advancedSettings')}
               </button>
             </Show>
           </div>

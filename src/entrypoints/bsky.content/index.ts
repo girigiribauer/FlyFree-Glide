@@ -1,7 +1,7 @@
 import { extractAuthorHandle, extractImageUrls, extractText, extractUrl, findPost, getMyHandle } from '../../lib/bskyDom'
 import { setLang, t } from '../../lib/i18n'
 import { loadSettings } from '../../lib/settings'
-import { composeTeaserText, type XDraft } from '../../lib/xpost'
+import { composeCliffhangerText, type XDraft } from '../../lib/xpost'
 
 const INJECTED_ATTR = 'data-flyfree-x'
 
@@ -84,7 +84,7 @@ export default defineContentScript({
             item.addEventListener('click', async (e) => {
               e.stopPropagation()
               const xText = xCliffhanger && capturedText && capturedUrl
-                ? composeTeaserText(capturedText, capturedUrl)
+                ? composeCliffhangerText(capturedText, capturedUrl)
                 : capturedText || capturedUrl
               const imageUrls = capturedPost ? extractImageUrls(capturedPost) : []
               const xDraft: XDraft = { text: xText, images: [] }

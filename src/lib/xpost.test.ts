@@ -1,24 +1,24 @@
 import { describe, expect, test } from 'vitest'
 
-import { composeTeaserText, countXChars, uint8ToBase64 } from './xpost'
+import { composeCliffhangerText, countXChars, uint8ToBase64 } from './xpost'
 
 const URL = 'https://bsky.app/profile/test.bsky.social/post/abc123'
 
-describe('composeTeaserText', () => {
+describe('composeCliffhangerText', () => {
   test('50グラフェム未満のテキストにも Bluesky URL を付ける', () => {
     const text = 'a'.repeat(49)
-    expect(composeTeaserText(text, URL)).toBe(text + '\n' + URL)
+    expect(composeCliffhangerText(text, URL)).toBe(text + '\n' + URL)
   })
 
   test('ちょうど50グラフェムで発動し前半のみになる', () => {
     const text = 'a'.repeat(50)
-    const result = composeTeaserText(text, URL)
+    const result = composeCliffhangerText(text, URL)
     expect(result).toBe('a'.repeat(25) + '... ' + URL)
   })
 
   test('ASCIIテキストは半分の位置で切る', () => {
     const text = 'a'.repeat(100)
-    const result = composeTeaserText(text, URL)
+    const result = composeCliffhangerText(text, URL)
     expect(result).toBe('a'.repeat(50) + '... ' + URL)
   })
 
@@ -26,7 +26,7 @@ describe('composeTeaserText', () => {
     // 300グラフェムの日本語: 半分=150だがCJK×2で300X文字 > 253(上限-... -URL)
     // → X上限側でキャップされる
     const text = 'あ'.repeat(300)
-    const result = composeTeaserText(text, URL)
+    const result = composeCliffhangerText(text, URL)
     expect(result.endsWith('... ' + URL)).toBe(true)
     const textPart = result.slice(0, result.indexOf('... '))
     // CJK×2なので textPart.length × 2 <= 253
@@ -35,7 +35,7 @@ describe('composeTeaserText', () => {
 
   test('テキスト部分 + "... " + URL がX上限を超えない', () => {
     const text = 'あ'.repeat(200)
-    const result = composeTeaserText(text, URL)
+    const result = composeCliffhangerText(text, URL)
     const textPart = result.slice(0, result.indexOf('... '))
     const xWeight = [...textPart].reduce((sum, ch) => {
       const cp = ch.codePointAt(0) ?? 0
@@ -48,7 +48,7 @@ describe('composeTeaserText', () => {
     // URL(23) + ASCII × 49 = 72 X文字 → 50グラフェム以上なので発動
     // 前半は URL(1グラフェム)+ASCII(24グラフェム) = 25グラフェムが上限
     const text = 'https://example.com/path ' + 'a'.repeat(75)
-    const result = composeTeaserText(text, URL)
+    const result = composeCliffhangerText(text, URL)
     expect(result.endsWith('... ' + URL)).toBe(true)
     // 結果全体のX文字数が280以内
     expect(countXChars(result)).toBeLessThanOrEqual(280)
@@ -60,12 +60,12 @@ describe('composeTeaserText', () => {
     const longUrl = 'https://example.com/path'  // 24文字だが X では 23 文字扱い
     const filler = 'a'.repeat(230)
     const text = longUrl + ' ' + filler  // 合計 255 グラフェムで 50 超
-    const result = composeTeaserText(text, URL)
+    const result = composeCliffhangerText(text, URL)
     expect(countXChars(result)).toBeLessThanOrEqual(280)
   })
 })
 
-describe('composeTeaserText — URL のアトミック処理', () => {
+describe('composeCliffhangerText — URL のアトミック処理', () => {
   // 'https://example.com' = 19 graphemes
 
   test('URL が halfPoint 前に収まる場合はそのまま含まれる', () => {
@@ -73,7 +73,7 @@ describe('composeTeaserText — URL のアトミック処理', () => {
     // URL は gi=31 から始まり gi=50 で終わる（halfPoint を超えるが前から始まる）
     // → URL 丸ごと含めて次セグメントで打ち切り
     const text = 'a'.repeat(30) + ' https://example.com ' + 'b'.repeat(30)
-    const result = composeTeaserText(text, URL)
+    const result = composeCliffhangerText(text, URL)
     expect(result).toBe('a'.repeat(30) + ' https://example.com' + '... ' + URL)
   })
 
@@ -82,7 +82,7 @@ describe('composeTeaserText — URL のアトミック処理', () => {
     // URL は gi=26 から始まり gi=45 で終わる（halfPoint=35 をまたぐ）
     // → URL を途中で切らず丸ごと含める
     const text = 'a'.repeat(25) + ' https://example.com ' + 'b'.repeat(25)
-    const result = composeTeaserText(text, URL)
+    const result = composeCliffhangerText(text, URL)
     expect(result).toBe('a'.repeat(25) + ' https://example.com' + '... ' + URL)
   })
 
@@ -91,7 +91,7 @@ describe('composeTeaserText — URL のアトミック処理', () => {
     // URL は gi=62 から始まる（halfPoint=40 より後）
     // → テキストを halfPoint で打ち切り、URL は含まれない
     const text = 'a'.repeat(30) + ' ' + 'b'.repeat(30) + ' https://example.com'
-    const result = composeTeaserText(text, URL)
+    const result = composeCliffhangerText(text, URL)
     expect(result).toBe('a'.repeat(30) + ' ' + 'b'.repeat(9) + '... ' + URL)
   })
 
@@ -99,7 +99,7 @@ describe('composeTeaserText — URL のアトミック処理', () => {
     // 'a'×49 + ' ' + URL(19) + ' ' + 'b'×30 = 100 graphemes, halfPoint=50
     // ' ' までで cutAt=50 → その直後の URL は gi=50 >= halfPoint=50 で除外
     const text = 'a'.repeat(49) + ' https://example.com ' + 'b'.repeat(30)
-    const result = composeTeaserText(text, URL)
+    const result = composeCliffhangerText(text, URL)
     expect(result).toBe('a'.repeat(49) + ' ' + '... ' + URL)
   })
 
@@ -109,17 +109,17 @@ describe('composeTeaserText — URL のアトミック処理', () => {
     // → URL 丸ごと含めて次セグメントは halfPoint 超過のため打ち切り
     const longUrl = 'https://example.com/' + 'x'.repeat(20) // 40 graphemes
     const text = longUrl + ' ' + 'b'.repeat(10)
-    const result = composeTeaserText(text, URL)
+    const result = composeCliffhangerText(text, URL)
     expect(result).toBe(longUrl + '... ' + URL)
   })
 
   test('URL が途中で切れてテキストに現れないこと（旧バグの回帰テスト）', () => {
     // URL が halfPoint をまたぐとき、URL の一部だけが出力に含まれてはいけない
     const text = 'a'.repeat(25) + ' https://example.com/long-path ' + 'b'.repeat(25)
-    const result = composeTeaserText(text, URL)
-    const teaser = result.slice(0, result.indexOf('... '))
+    const result = composeCliffhangerText(text, URL)
+    const cliffhanger = result.slice(0, result.indexOf('... '))
     // テキスト部分に不完全な URL が含まれていないこと
-    const hasPartialUrl = teaser.includes('https://') && !teaser.includes('https://example.com/long-path')
+    const hasPartialUrl = cliffhanger.includes('https://') && !cliffhanger.includes('https://example.com/long-path')
     expect(hasPartialUrl).toBe(false)
   })
 })
