@@ -8,6 +8,10 @@ on:
 jobs:
   submit:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -26,6 +30,12 @@ jobs:
           fi
       - run: npm run zip
       - run: npm run zip:firefox
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            .output/flyfree-glide-${{ github.ref_name }}-chrome.zip
+            .output/flyfree-glide-${{ github.ref_name }}-firefox.zip
       - name: Submit to Chrome Web Store and Firefox AMO
         run: |
           VERSION=$(node -p "require('./package.json').version")
