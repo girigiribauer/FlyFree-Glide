@@ -4,6 +4,16 @@ on:
   push:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      store:
+        description: 'Which store to submit to'
+        type: choice
+        options:
+          - both
+          - chrome
+          - firefox
+        default: both
 
 jobs:
   submit:
@@ -21,11 +31,14 @@ jobs:
       - run: npm ci
       - run: npx wxt prepare
       - run: npm test
+      - name: Resolve version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       - name: Check tag matches package.json version
+        if: github.event_name == 'push'
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          if [ "$VERSION" != "$GITHUB_REF_NAME" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match package.json version $VERSION"
+          if [ "${{ steps.version.outputs.version }}" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version ${{ steps.version.outputs.version }}"
             exit 1
           fi
       - run: npm run zip
@@ -34,20 +47,25 @@ jobs:
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
-            .output/flyfree-glide-${{ github.ref_name }}-chrome.zip
-            .output/flyfree-glide-${{ github.ref_name }}-firefox.zip
-      - name: Submit to Chrome Web Store and Firefox AMO
+            .output/flyfree-glide-${{ steps.version.outputs.version }}-chrome.zip
+            .output/flyfree-glide-${{ steps.version.outputs.version }}-firefox.zip
+      - name: Submit to Chrome Web Store
+        if: github.event_name == 'push' || github.event.inputs.store == 'both' || github.event.inputs.store == 'chrome'
         run: |
-          VERSION=$(node -p "require('./package.json').version")
           npx wxt submit \
-            --chrome-zip .output/flyfree-glide-$VERSION-chrome.zip \
-            --firefox-zip .output/flyfree-glide-$VERSION-firefox.zip \
-            --firefox-sources-zip .output/flyfree-glide-$VERSION-sources.zip
+            --chrome-zip .output/flyfree-glide-${{ steps.version.outputs.version }}-chrome.zip
         env:
           CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
           CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
           CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
           CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+      - name: Submit to Firefox AMO
+        if: github.event_name == 'push' || github.event.inputs.store == 'both' || github.event.inputs.store == 'firefox'
+        run: |
+          npx wxt submit \
+            --firefox-zip .output/flyfree-glide-${{ steps.version.outputs.version }}-firefox.zip \
+            --firefox-sources-zip .output/flyfree-glide-${{ steps.version.outputs.version }}-sources.zip
+        env:
           FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
           FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
           FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
