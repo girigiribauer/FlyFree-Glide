@@ -1,4 +1,5 @@
 import { handleMessage } from '../lib/backgroundRouter'
+import { isShareableUrl } from '../lib/initialText'
 
 const POPUP_WIDTH = 600
 const POPUP_HEIGHT = 480
@@ -20,7 +21,7 @@ export default defineBackground(() => {
   }
 
   browser.action.onClicked.addListener(async (tab) => {
-    if (tab.url || tab.title) {
+    if (isShareableUrl(tab.url)) {
       await browser.storage.session.set({ pendingPage: { url: tab.url, title: tab.title } })
     }
 
