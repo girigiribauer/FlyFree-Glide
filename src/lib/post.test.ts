@@ -83,6 +83,21 @@ describe('postToBluesky', () => {
     expect(linkFacet).toBeDefined()
   })
 
+  test('長い URL でも facet のリンク先は完全な URL を保持する（表示テキストのみ短縮）', async () => {
+    const agent = mockAgent()
+    const url = 'https://example.com/2024/11/some-long-article-slug'
+    await postToBluesky(agent, `これ見て ${url}`)
+    const record = (agent.post as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    const linkFacet = record.facets?.find((f: { features: { $type: string; uri?: string }[] }) =>
+      f.features.some((feat) => feat.$type === 'app.bsky.richtext.facet#link'),
+    )
+    expect(linkFacet).toBeDefined()
+    expect(linkFacet.features[0].uri).toBe(url)
+    // 投稿テキスト側は短縮されている
+    expect(record.text).toContain('example.com/2024/11/some...')
+    expect(record.text).not.toContain(url)
+  })
+
   test('URL を含むテキストでリンクカード embed が付与される', async () => {
     vi.mocked(fetchLinkCard).mockResolvedValueOnce({
       url: 'https://example.com',

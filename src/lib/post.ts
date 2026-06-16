@@ -4,7 +4,7 @@ import { MAX_LINK_THUMB_SIZE } from './constants'
 import { type OptimizedImage, optimizeImage } from './image'
 import { extractFirstUrl, fetchLinkCard, type LinkCard } from './ogp'
 import type { ContentLabel, ThreadgateSettings } from './settings'
-import { buildShortLinkText, removeLinkCardUrl } from './urlHelpers'
+import { buildShortenedRichText, removeLinkCardUrl } from './urlHelpers'
 
 export type { OptimizedImage as PostImage }
 
@@ -134,8 +134,11 @@ export async function postToBluesky(
       ? removeLinkCardUrl(trimmed, linkUrl)
       : trimmed
 
-  const rt = new RichText({ text: buildShortLinkText(finalText) })
+  // 先に原文で facet を解決して正しいリンク先 URI を確定させてから、
+  // リンク本文だけを短縮する（短縮後に検出するとリンク先まで切れてしまう）
+  const rt = new RichText({ text: finalText })
   await rt.detectFacets(agent as unknown as AtpBaseClient)
+  const shortened = buildShortenedRichText(rt)
 
   const langs = options?.langs?.length ? options.langs : undefined
   const labelValues = options?.labels?.length
@@ -143,8 +146,8 @@ export async function postToBluesky(
     : undefined
 
   const result = await agent.post({
-    text: rt.text,
-    facets: rt.facets,
+    text: shortened.text,
+    facets: shortened.facets,
     ...(langs && { langs }),
     ...(embed && { embed }),
     ...(labelValues && { labels: labelValues }),
